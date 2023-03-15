@@ -21,3 +21,6 @@ MaxVelRate:                  0.80
 Iterations:                  23
 
 Epsilon:                     0.02
+
+# Number of Points 
+PointNumber:                 3
