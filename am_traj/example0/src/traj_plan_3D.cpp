@@ -11,12 +11,12 @@
 #include <vector>
 #include <string>
 
+#define refresh -1
+#define start 1
 
 using namespace Eigen;
 using namespace std;
 using namespace ros;
-
-#define PointNum 4
 
 class Config
 {
@@ -51,6 +51,7 @@ class Config
     double maxVelRate;
     int iterations;
     double epsilon;
+
 };
 
 class Visualizer                //可视化工具   Marker标记
@@ -259,6 +260,8 @@ class TrajPlan_3D
         std::vector<Eigen::Vector3d> wPs;
         void motion_plan_callback(const ros::TimerEvent &e);
         int point_count ;
+        int pointNumber;
+        int refreshTime=start;
 
         ros::Publisher motion_pub;
         // mavros_msgs::Speed motion_msg;
@@ -272,7 +275,8 @@ TrajPlan_3D::TrajPlan_3D()
     point_count = 1;
     // motion_pub = nh_.advertise<mavros_msgs::Speed>("/mavros/speed_control/motion_command",10);
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
-
+    nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
+    
 }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)
@@ -282,16 +286,23 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
     float y = point_msg->pose.position.y;
     float z = point_msg->pose.position.z;
 
-    if(point_count==PointNum+1)
+    if(point_count== refresh)
     {
+        int i;
         // wPs.emplace_back(0.0, 0.0, 0.0);
-        wPs.pop_back();
-        wPs.pop_back();
-        wPs.pop_back();
-        wPs.pop_back();
+        if(refreshTime != start){i=0;}
+        else{i=1;refreshTime=-1;}
+
+        for( i ;i<pointNumber;i++)
+        {
+            std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+            wPs.erase(k);//删除第一个元素
+
+            // wPs.pop_back();
+        }
         point_count = 1;
     }
-    if(point_count<=PointNum)
+    if(point_count<=pointNumber)
     {
         wPs.emplace_back(x,y,z);
         point_count ++;
@@ -310,7 +321,7 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
     Eigen::Vector3d iV(-0.015, -0.01, 0.0), fV(0.0, 0.0, 0.0);
     Eigen::Vector3d iA(0.0, 0.0, 0.0), fA(0.0, 0.0, 0.0); //规定航点处的速度和加速度
 
-    if(point_count==PointNum+1)
+    if(point_count==pointNumber+1)
     {
         // wPs.emplace_back(0.0, 0.0, 0.0);
         // wPs.emplace_back(1.0, 0.0, 0.0);
@@ -340,6 +351,8 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
                 motion_msg.linear.y = 0;
                 motion_msg.angular.z = 0;
                 ROS_WARN("Stop!!!!");
+                point_count = refresh;
+                break;
             }
             motion_pub.publish(motion_msg);
             ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
@@ -352,8 +365,9 @@ int main(int argc,char **argv)
 {
     ros::init(argc, argv, "traj_node");
 
-    ROS_INFO("Traj_plan start");
+    
     TrajPlan_3D tp_3D;
+    ROS_INFO("Traj_plan start, point number");
     ros::spin();
     
     return 0;
