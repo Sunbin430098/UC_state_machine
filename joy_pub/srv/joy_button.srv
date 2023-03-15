@@ -1,0 +1,5 @@
+int32 button_A
+int32 button_B
+
+---
+bool send_success

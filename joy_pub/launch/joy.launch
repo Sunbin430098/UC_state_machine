@@ -1,0 +1,20 @@
+<launch>
+ <!-- joy node -->
+  <node respawn="true" pkg="joy"
+        type="joy_node" name="turtle_joy" >
+    <param name="dev" type="string" value="/dev/input/js0" />
+    <param name="deadzone" value="0.12" />
+  </node>
+  <!-- Buttons 0是Ａ 1是B-->
+  <param name="stop" value="0" type="int"/>   
+  <!-- <param name="start" value="1" type="int"/> -->
+
+  <!-- T265camera node -->
+  <!-- roslaunch realsense2_camera demo_t265.launch -->
+  <include file="$(find realsense2_camera)/launch/demo_t265.launch"/>
+
+  <!-- up_machine node -->
+  <!-- <node pkg="joy_pub" type="speed_plan" name="speed_plan"/> -->
+  <node pkg="joy_pub" type="joy_pub" name="joy_pub"/>
+
+</launch>
