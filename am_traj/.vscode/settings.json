@@ -1,6 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "/home/ubuntu/final_proj/ros_ctrl/devel/lib/python2.7/dist-packages",
-        "/opt/ros/melodic/lib/python2.7/dist-packages"
-    ]
-}
