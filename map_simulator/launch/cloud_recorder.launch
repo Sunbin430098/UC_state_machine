@@ -1,0 +1,7 @@
+<launch>
+        <!--    filter record-->
+    <node  pkg="map_simulator" type="cloud_recorder" name="cloud_recorder" output="screen" >
+        <param name="cloud_topic" type="string" value="/cloud_registered" />
+        <param name="file_name" type="string" value="t3.pcd" />
+    </node>
+</launch>

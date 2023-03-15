@@ -1,0 +1,13 @@
+<launch>
+    <node pkg="map_simulator" type="cloud_publisher" name="cloud_publisher" >
+        <param name="file" type="string" value="t3.pcd"/>
+        <param name="topic" type="string" value="/t3_cloud"/>
+        <param name="shift_x" type="double" value="10"/>
+        <param name="shift_y" type="double" value="0"/>
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0  map world 40" />
+    <!-- <node pkg="rviz" type="rviz" name="rviz" />
+
+    </node> -->
+</launch>

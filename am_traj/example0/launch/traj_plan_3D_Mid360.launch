@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <node name="rviz" pkg="rviz" type="rviz" output="screen"
+           args="-d $(find nav_traj_plan)/config/Mid360_traj.rviz"> 
+    </node>
+
+    <node pkg="nav_traj_plan" type="traj_plan_3D" name="traj_plan_3D" output="screen">
+        <!-- node parameters -->
+        <rosparam file="$(find nav_traj_plan)/config/example0_params.yaml" command="load" />
+    </node>
+
+    <include file="$(find map_simulator)/launch/my_map.launch"/>
+
+</launch>

@@ -1,0 +1,7 @@
+image: ./t3_-139.pgm
+resolution: 0.05
+# origin: [-20.3324, -12.8701, 0.0]
+origin: [10, 24, 3.84]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
