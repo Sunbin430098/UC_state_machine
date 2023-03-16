@@ -355,6 +355,7 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
 
             motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
             motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
+            // motion_msg.angular.z = traj.getVel(time_diff.toSec())();
             // motion_msg.x = traj.getPos(time_diff.toSec())(0);
             // motion_msg.y = traj.getPos(time_diff.toSec())(1);
 
