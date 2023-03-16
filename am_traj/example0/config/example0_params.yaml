@@ -23,4 +23,9 @@ Iterations:                  23
 Epsilon:                     0.02
 
 # Number of Points 
-PointNumber:                 3
+PointNumber:                   4
+
+#Different Number of Points in every part
+PointArray:                  [3,4,5]
+#Maximum segment
+MaxParts:                      3

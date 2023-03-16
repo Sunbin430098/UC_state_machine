@@ -14,6 +14,8 @@
 #define refresh -1
 #define start 1
 
+#define maxPointParts 20
+
 using namespace Eigen;
 using namespace std;
 using namespace ros;
@@ -259,9 +261,14 @@ class TrajPlan_3D
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
         void motion_plan_callback(const ros::TimerEvent &e);
+
         int point_count ;
         int pointNumber;
         int refreshTime=start;
+        
+        int maxParts;
+        int IntervalNumber = 0;
+        int PointNumberArray[maxPointParts]={0};
 
         ros::Publisher motion_pub;
         // mavros_msgs::Speed motion_msg;
@@ -275,8 +282,16 @@ TrajPlan_3D::TrajPlan_3D()
     point_count = 1;
     // motion_pub = nh_.advertise<mavros_msgs::Speed>("/mavros/speed_control/motion_command",10);
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
+
     nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
-    
+    nh_.getParam("/traj_plan_3D/MaxParts",maxParts);          //load point parts array
+    int TempPointNumberArray[maxParts];
+    nh_.getParam("/traj_plan_3D/PointArray",TempPointNumberArray[maxParts]);
+    for(int i=0;i<maxParts;i++)
+    {
+        PointNumberArray[i] = TempPointNumberArray[i];
+    }
+        
 }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)
@@ -293,12 +308,10 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
         if(refreshTime != start){i=0;}
         else{i=1;refreshTime=-1;}
 
-        for( i ;i<pointNumber;i++)
+        for(;i<pointNumber;i++)
         {
             std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
             wPs.erase(k);//删除第一个元素
-
-            // wPs.pop_back();
         }
         point_count = 1;
     }
