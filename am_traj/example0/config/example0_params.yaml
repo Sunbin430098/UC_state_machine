@@ -24,7 +24,7 @@ Epsilon:                     0.02
 
 ##process1
 # Number of Points 
-PointNumber:                   4
+PointNumber:                   3
 
 #process2
 #Different Number of Points in every part .cpp文件中maxPointParts设置20,最多区间小于20即可
@@ -34,4 +34,12 @@ MaxParts:                       3
 
 #process3
 #The point coordinates to be passed in
-Point_1:                        [2,3,4]
+# Point_0:                      [0,0,0]
+# Point_1:                      [1,2,3]
+# point_2:                      [2,3,4]
+                             #x       #y      #z
+PointSet:                 [ 0.0,      0.0,    0.0,           
+                            1,      2,      3,            
+                            2,      3,      4,
+                            3,      4,      5]           
+MaxPointSetNumber:              12         #3*3,坐标数*3

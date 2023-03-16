@@ -21,6 +21,10 @@ using namespace ros;
 #define maxPointParts 20
 vector<int> PointNumberArray(maxPointParts);
 
+#define maxSetNumber 30*3
+// float CoordinatePointSet[maxSetNumber][3]={0};
+vector<vector<double>>    CoordinatePointSet(maxSetNumber,vector<double>(3,0));
+geometry_msgs::PoseStamped PointPoseStamped;
 
 
 class Config
@@ -258,19 +262,26 @@ class TrajPlan_3D
     public:
         TrajPlan_3D();
         void pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg);
+        // void joyCallback(const );
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
+        ros::Subscriber joy_sub;
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
         void motion_plan_callback(const ros::TimerEvent &e);
 
+        //process1---------
         int point_count ;
         int pointNumber;
         int refreshTime=start;
         
+        //process2---------
         int maxParts;
         int IntervalNumber = 0;
+
+        //process3---------
+        int maxPointSetNumber;
 
         ros::Publisher motion_pub;
         // mavros_msgs::Speed motion_msg;
@@ -280,22 +291,43 @@ class TrajPlan_3D
 
 TrajPlan_3D::TrajPlan_3D()
 {
-    point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
     point_count = 1;
+    point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
     // motion_pub = nh_.advertise<mavros_msgs::Speed>("/mavros/speed_control/motion_command",10);
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
 
-    nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
-    nh_.getParam("/traj_plan_3D/MaxParts",maxParts);          //load point parts array
+    // joy_sub = nh_.subscribe<>("",10,&Traj_plan_3D::joyCallback,this);//等待遥控器开启指令
 
-    vector<int> TempPointNumberArray(maxParts,0);
-    nh_.getParam("/traj_plan_3D/PointArray",TempPointNumberArray);
-    for(int i=0;i<maxParts;i++)
+    //process1-----------------param--------------------
+    nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
+
+    //process2-----------------param--------------------
+    // nh_.getParam("/traj_plan_3D/MaxParts",maxParts);          //load point parts array
+    // vector<int> TempPointNumberArray(maxParts,0);
+    // nh_.getParam("/traj_plan_3D/PointArray",TempPointNumberArray);
+    // for(int i=0;i<maxParts;i++)
+    // {
+    //     PointNumberArray[i] = TempPointNumberArray[i];
+    //     ROS_INFO("PointNumberArray[%d]=%d",i,PointNumberArray[i]);
+    // }
+    
+    //process3-----------------param--------------------
+    nh_.getParam("/traj_plan_3D/MaxPointSetNumber", maxPointSetNumber);
+    vector<float> TempCoordinatePointSet(maxPointSetNumber,0);
+    nh_.getParam("/traj_plan_3D/PointSet", TempCoordinatePointSet);
+    for(int i=0;i<maxPointSetNumber/3;i++)
     {
-        PointNumberArray[i] = TempPointNumberArray[i];
-        ROS_INFO("PointNumberArray[%d]=%d",i,PointNumberArray[i]);
+        for(int j=0;j<3;j++)
+        {
+            CoordinatePointSet[i/3][j] = TempCoordinatePointSet[i*3+j];
+            ROS_INFO("CoordinatePointSet[%d][%d]=%f",i/3,j,TempCoordinatePointSet[i*3+j]);
+            if((i*3+j+1)%3==0)
+            {
+                std::cout<<"  "<<std::endl;
+            }
+        }
     }
-        
+
 }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)
@@ -317,69 +349,71 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
     float y = point_msg->pose.position.y;
     float z = point_msg->pose.position.z;
     
-    if(point_count== refresh)
-    {
-        int i;
-        // wPs.emplace_back(0.0, 0.0, 0.0);
-        if(refreshTime != start){i=0;}
-        else{i=1;refreshTime=-1;}
+    //process2-------------------------------------------------------------------------
+    // if(point_count== refresh)
+    // {
+    //     int i;
+    //     // wPs.emplace_back(0.0, 0.0, 0.0);
+    //     if(refreshTime != start){i=0;}
+    //     else{i=1;refreshTime=-1;}
 
-        for(;i<PointNumberArray[IntervalNumber-1];i++)
-        {
-            std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
-            wPs.erase(k);//删除第一个元素
-        }
-        point_count = 1;
-    }
-    if(point_count<=PointNumberArray[IntervalNumber])
-    {
-        wPs.emplace_back(x,y,z);
-        point_count ++;
-        ROS_INFO("PointNumberArray[%d]=%d",IntervalNumber,PointNumberArray[IntervalNumber]);
-    }
-    std::cout<<"Receive x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
-    std::cout<<"count = "<<point_count<<std::endl;
-    if(point_count==PointNumberArray[IntervalNumber]+1)
-    {
-        if(IntervalNumber<maxParts){IntervalNumber++;}
-        else{ROS_WARN("too many parts of points.");}
-        // wPs.emplace_back(0.0, 0.0, 0.0);
-        // wPs.emplace_back(1.0, 0.0, 0.0);
-        traj = amTrajOpt.genOptimalTrajDTC(wPs, iV, iA, fV, fA);
-        ROS_INFO("Draw trail start");
-        ros::Time begin = ros::Time::now();
-        while (ros::ok())
-        { 
-            viz.visualize(traj, wPs, 0);
-            ros::Duration time_diff = ros::Time::now() - begin;
+    //     for(;i<PointNumberArray[IntervalNumber-1];i++)
+    //     {
+    //         std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+    //         wPs.erase(k);//删除第一个元素
+    //     }
+    //     point_count = 1;
+    // }
+    // if(point_count<=PointNumberArray[IntervalNumber])
+    // {
+    //     wPs.emplace_back(x,y,z);
+    //     point_count ++;
+    //     ROS_INFO("PointNumberArray[%d]=%d",IntervalNumber,PointNumberArray[IntervalNumber]);
+    // }
+    // std::cout<<"Receive x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
+    // std::cout<<"count = "<<point_count<<std::endl;
+    // if(point_count==PointNumberArray[IntervalNumber]+1)
+    // {
+    //     if(IntervalNumber<maxParts){IntervalNumber++;}
+    //     else{ROS_WARN("too many parts of points.");}
+    //     // wPs.emplace_back(0.0, 0.0, 0.0);
+    //     // wPs.emplace_back(1.0, 0.0, 0.0);
+    //     traj = amTrajOpt.genOptimalTrajDTC(wPs, iV, iA, fV, fA);
+    //     ROS_INFO("Draw trail start");
+    //     ros::Time begin = ros::Time::now();
+    //     while (ros::ok())
+    //     { 
+    //         viz.visualize(traj, wPs, 0);
+    //         ros::Duration time_diff = ros::Time::now() - begin;
 
-            motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
-            motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
-            // motion_msg.angular.z = traj.getVel(time_diff.toSec())();
-            // motion_msg.x = traj.getPos(time_diff.toSec())(0);
-            // motion_msg.y = traj.getPos(time_diff.toSec())(1);
+    //         motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
+    //         motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
+    //         // motion_msg.angular.z = traj.getVel(time_diff.toSec())();
+    //         // motion_msg.x = traj.getPos(time_diff.toSec())(0);
+    //         // motion_msg.y = traj.getPos(time_diff.toSec())(1);
 
-            if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()< traj.getTotalDuration()+0.15)
-            {
-                motion_msg.linear.x = 0;
-                motion_msg.linear.y = 0;
-                motion_msg.angular.z = 0;
-            }
-            else if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()> traj.getTotalDuration()+0.15)
-            {
-                motion_msg.linear.x = 0;
-                motion_msg.linear.y = 0;
-                motion_msg.angular.z = 0;
-                ROS_WARN("Stop!!!!");
-                point_count = refresh;
-                break;
-            }
-            motion_pub.publish(motion_msg);
-            ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
-            rate.sleep();
-        }
-    }
+    //         if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()< traj.getTotalDuration()+0.15)
+    //         {
+    //             motion_msg.linear.x = 0;
+    //             motion_msg.linear.y = 0;
+    //             motion_msg.angular.z = 0;
+    //         }
+    //         else if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()> traj.getTotalDuration()+0.15)
+    //         {
+    //             motion_msg.linear.x = 0;
+    //             motion_msg.linear.y = 0;
+    //             motion_msg.angular.z = 0;
+    //             ROS_WARN("Stop!!!!");
+    //             point_count = refresh;
+    //             break;
+    //         }
+    //         motion_pub.publish(motion_msg);
+    //         ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
+    //         rate.sleep();
+    //     }
+    // }
 
+    //process1----------------------------------------------------------------------------------
     // if(point_count== refresh)
     // {
     //     int i;
@@ -442,6 +476,11 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
     //     }
     // }
 }
+
+// void TrajPlan_3D::joyCallback(const )
+// {
+
+// }
 
 int main(int argc,char **argv)
 {

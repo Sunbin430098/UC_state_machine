@@ -30,6 +30,7 @@ catkin_package(
 add_executable(example0_node src/example0_node.cpp)
 add_executable(traj_plan src/traj_plan.cpp)
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
+add_executable(wtr_joy src/wtr_joy.cpp)
 
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
@@ -43,3 +44,7 @@ target_link_libraries(traj_plan
 target_link_libraries(traj_plan_3D
   ${catkin_LIBRARIES}
 )
+target_link_libraries(wtr_joy
+  ${catkin_LIBRARIES}
+)
+

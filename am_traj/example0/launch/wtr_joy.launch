@@ -1,0 +1,15 @@
+<launch>
+ <!-- joy node -->
+  <node respawn="true" pkg="joy"
+        type="joy_node" name="turtle_joy" >
+    <param name="dev" type="string" value="/dev/input/js0" />
+    <param name="deadzone" value="0.12" />
+  </node>
+  <!-- Buttons 0是Ａ 1是B-->
+  <param name="stop" value="0" type="int"/>   
+  <!-- <param name="start" value="1" type="int"/> -->
+
+  <!-- up_machine node -->
+  <node pkg="nav_traj_plan" type="wtr_joy" name="joy_command"/>
+
+</launch>

@@ -10,5 +10,6 @@
     </node>
 
     <include file="$(find map_simulator)/launch/my_map.launch"/>
+    <!-- <include file="$(find nav_traj_plan)/launch/wtr_joy.launch" /> -->
 
 </launch>
