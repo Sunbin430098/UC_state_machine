@@ -43,3 +43,5 @@ target_link_libraries(traj_plan
 target_link_libraries(traj_plan_3D
   ${catkin_LIBRARIES}
 )
+
+
