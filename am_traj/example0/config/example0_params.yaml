@@ -25,7 +25,7 @@ Epsilon:                     0.02
 # Number of Points 
 PointNumber:                   4
 
-#Different Number of Points in every part
-PointArray:                  [3,4,5]
-#Maximum segment
+#Different Number of Points in every part .cpp文件中maxPointParts设置20,最多区间小于20即可
+PointArray:                   [3,3,4,4]
+#Maximum segment  此值小于等于PointArray元素个数即可
 MaxParts:                      3
