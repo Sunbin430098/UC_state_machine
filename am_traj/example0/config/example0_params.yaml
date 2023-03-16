@@ -26,6 +26,6 @@ Epsilon:                     0.02
 PointNumber:                   4
 
 #Different Number of Points in every part
-PointArray:                  [3,4,5]
+PointArray:                   [3,3,4,4]
 #Maximum segment
-MaxParts:                      3
+MaxParts:                      4
