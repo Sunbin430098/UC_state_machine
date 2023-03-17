@@ -63,6 +63,6 @@ PointSet_:                 [ 0.0,      0.0,    0.0,
                             12,     13,     14,
                             13,     14,     15
                             ]   
-MaxPointSetNumber_:              42
-PointArray_:                 [3,3,4,4]
-MaxParts_:                       4
+MaxPointSetNumber_:              42       #上面一维数组元素总数
+PointArray_:                 [3,3,4,4]    #每个区段的点数(能力有限，应与坐标元素数组间隔一一对应)
+MaxParts_:                       2        #此值小于等于PointArray_元素个数即可
