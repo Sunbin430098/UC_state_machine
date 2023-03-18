@@ -9,7 +9,7 @@ project(urdf01_rviz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   urdf
-  xacro
+  # xacro
   gazebo_ros
   gazebo_ros_control
   gazebo_plugins

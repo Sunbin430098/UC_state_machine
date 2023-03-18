@@ -1,0 +1,151 @@
+<robot name="nbmod">
+    <link name="base_footprint">
+        <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+            <box size="0.001 0.001 0.001"/>
+        </geometry>
+        </visual>
+    </link>
+
+    <joint name="base_footprint_joint" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0.5"/>
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+    </joint>
+
+    <link name="base_link">
+        <inertial>
+            <origin xyz="0 0 0"/>
+            <mass value="1.0"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <box size="1 1 1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <material name="blue">
+                <color rgba="0 0 0.8 1"/>
+            </material>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="1 1 1"/>
+            </geometry>
+            <inertial>
+                <mass value="20"/>
+                <inertia ixx="0.00533333333333" ixy="0" ixz="0" iyy="0.00833333333333" iyz="0" izz="0.0666666666667"/>
+            </inertial>
+        </collision>
+    </link>
+
+    <joint name="joint_base2lidar" type="continuous">
+        <axis xyz="0 0 1"/>
+        <parent link="base_link"/>
+        <child link="lidar"/>
+        <origin rpy="0 0 0" xyz="0 0 0.75"/>
+        <limit effort="100" velocity="100"/>
+        <joint_properties damping="0.0" friction="0.0"/>
+    </joint>
+
+    <link name="lidar">
+    <inertial>
+        <origin xyz="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+        <geometry>
+            <cylinder length="0.5" radius="0.25"/>
+        </geometry>
+        <material name="black">
+            <color rgba="0 0 0 1"/>
+        </material>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+            <cylinder length="0.5" radius="0.25"/>
+        </geometry>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.000379166666667" ixy="0" ixz="0" iyy="0.000379166666667" iyz="0" izz="0.000625"/>
+        </inertial>
+    </collision>
+    </link>
+
+    <joint name="axle_lidar2barrel" type="revolute">
+        <parent link="lidar"/>
+        <child link="barrel"/>
+        <origin rpy="0 -1.57 0" xyz="-0.25 0 0.25"/>
+        <axis xyz="0 1 0"/>
+        <limit effort="2.5" lower="0" upper="0.785" velocity="0.1"/>
+    </joint>
+
+    <link name="barrel">
+        <inertial>
+            <origin xyz="0 0 0.25"/>
+            <mass value="0.1"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0.25"/>
+            <geometry>
+                <cylinder length="0.5" radius="0.01"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0 0 0 1"/>
+            </material>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0.25"/>
+            <geometry>
+                <cylinder length="0.5" radius="0.01"/>
+            </geometry>
+            <inertial>
+                <mass value="0.5"/>
+                <inertia ixx="0.000379166666667" ixy="0" ixz="0" iyy="0.000379166666667" iyz="0" izz="0.000625"/>
+            </inertial>
+        </collision>
+    </link>
+
+    <gazebo reference="base_link">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="lidar">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+    <gazebo reference="barrel">
+        <material>Gazebo/Red</material>
+    </gazebo>
+
+    <transmission name="tran_lidar">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="joint_base2lidar">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor1">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+
+    <transmission name="tran_barrel">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="axle_lidar2barrel">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor2">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+
+    <gazebo>
+        <plugin filename="libgazebo_ros_control.so" name="ros_control">
+            <robotNamespace>/nbmod</robotNamespace>
+        </plugin>
+    </gazebo>
+</robot>
