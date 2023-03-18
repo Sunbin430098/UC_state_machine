@@ -295,10 +295,11 @@ class TrajPlan_3D
         int IntervalNumber_ = 0;
         int maxPointSetNumber_;
 
-        //mavros communication------
-        ros::Publisher motion_pub;
-        // mavros_msgs::Speed motion_msg;
-        geometry_msgs::Twist motion_msg;
+        //mavros simulator communication-----------
+        ros::Publisher motion_pub;  
+        ros::Publisher sim_motion_pub;
+            // mavros_msgs::Speed motion_msg;
+        geometry_msgs::Twist motion_msg;    
 };
 
 TrajPlan_3D::TrajPlan_3D()
@@ -306,6 +307,7 @@ TrajPlan_3D::TrajPlan_3D()
     point_count = 1;
     point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
+    sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
     joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
 
     //process1-----------------param--------------------
@@ -604,6 +606,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     break;
                 }
                 motion_pub.publish(motion_msg);
+                sim_motion_pub.publish(motion_msg);
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
                 rate.sleep();
             }

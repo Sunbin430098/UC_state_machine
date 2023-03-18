@@ -7,7 +7,6 @@
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0  map world 40" />
-    <!-- <node pkg="rviz" type="rviz" name="rviz" />
+    <!-- <node pkg="rviz" type="rviz" name="rviz" /> -->
 
-    </node> -->
 </launch>

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot  name="assembly">
+  <link name="base_footprint">
+    <visual>
+        <geometry>
+            <sphere radius="0.001" />
+        </geometry>
+    </visual>
+  </link>
+
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.0118126683718567 5.32907051820075E-15 0.0168264325274268"
+        rpy="0 0 0" />
+      <mass
+        value="2.02602598879007" />
+      <inertia
+        ixx="0.116262533528923"
+        ixy="1.67333888769942E-15"
+        ixz="0.000426635965188161"
+        iyy="0.105009004212767"
+        iyz="-2.64059885210771E-17"
+        izz="0.218634075178532" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_link2base_footprint" type="fixed">
+        <parent link="base_footprint" />
+        <child link="base_link"/>
+        <origin xyz="0 0 0.055" />
+  </joint>
+
+  <link
+    name="Empty_front_Link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.614966761940201" />
+      <inertia
+        ixx="0.000747517428229084"
+        ixy="-5.09031388344709E-36"
+        ixz="6.6693162316281E-53"
+        iyy="0.00126377436724579"
+        iyz="-1.82819510199855E-36"
+        izz="0.000747517428229084" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_front_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_front_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Empty_front_Joint"
+    type="continuous">
+    <origin
+      xyz="0.32 0 0.046"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="Empty_front_Link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="Empty_left_Link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.614966761940201" />
+      <inertia
+        ixx="0.000747517428229084"
+        ixy="-4.83873113493721E-36"
+        ixz="0"
+        iyy="0.00126377436724579"
+        iyz="-1.82819510199855E-36"
+        izz="0.000747517428229084" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_left_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_left_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Empty_left_Joint"
+    type="continuous">
+    <origin
+      xyz="-0.16 0.27713 0.046"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="Empty_left_Link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="Empty_right_Link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.614966761940201" />
+      <inertia
+        ixx="0.000747517428229084"
+        ixy="-4.82102954644529E-36"
+        ixz="0"
+        iyy="0.00126377436724579"
+        iyz="-1.82819510199855E-36"
+        izz="0.000747517428229084" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_right_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://assembly2/meshes/Empty_right_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Empty_right_Joint"
+    type="continuous">
+    <origin
+      xyz="-0.16 -0.27713 0.046"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="Empty_right_Link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+</robot>
