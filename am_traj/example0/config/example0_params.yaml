@@ -45,7 +45,7 @@ MaxPointSetNumber:              15         #3*3,PointSet元素个数，即坐标
 #process4
 #Set the coordinate points of multiple segments
                              #x       #y      #z
-PointSet_:                 [ 0.0,      0.0,    0.0,           
+PointSet_:                 [0,      0,      0.0,           
                             1,      2,      0.0,            
                             2,      3,      0.0,
 

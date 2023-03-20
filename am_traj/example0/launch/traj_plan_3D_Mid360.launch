@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-    <node name="rviz" pkg="rviz" type="rviz" output="screen"
-           args="-d $(find nav_traj_plan)/config/Mid360_traj.rviz">
-    </node>
-
+    <!-- 加载轨迹规划主控 -->
     <node pkg="nav_traj_plan" type="traj_plan_3D" name="traj_plan_3D" output="screen">
-        
         <rosparam file="$(find nav_traj_plan)/config/example0_params.yaml" command="load" />
     </node>
-
-    <include file="$(find map_simulator)/launch/my_map.launch"/>
+    <!-- 加载rviz配置 -->
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find nav_traj_plan)/config/Mid360_traj.rviz" />
+    <!-- 加载三维点云地图 -->
+    <!-- <include file="$(find map_simulator)/launch/my_map.launch"/> -->
+    <!-- 加载二维slam地图 -->
     <include file="$(find nav_traj_plan)/launch/map_server.launch"/>
-
+    <!-- 加载手柄 -->
     <include file="$(find nav_traj_plan)/launch/wtr_joy.launch" />
 
-
-     <include file="$(find urdf01_rviz)/launch/demo07_control.launch" />     <!--加载模型车 -->
-
-    <!-- <include file="$(find assembly2)/launch/display.launch" /> -->      <!--加载比赛车 -->
+    <!-- 加载教学模型车 -->
+    <!-- <include file="$(find urdf01_rviz)/launch/demo07_control.launch" />      -->
+    <!--加载比赛车 -->
+    <!-- <include file="$(find assembly2)/launch/display.launch" /> -->      
     <!-- <include file="$(find assembly2)/launch/gazebo.launch" /> -->
     <!-- <include file="$(find assembly2)/launch/arbotix.launch" /> -->
+    <!-- 加载nb车 -->
+    <include file="$(find gazebo_pkg)/launch/nowall.launch" />
 
 </launch>
