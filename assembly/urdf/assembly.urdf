@@ -3,6 +3,7 @@
      Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot  name="assembly">
+  
   <link name="base_footprint">
     <visual>
         <geometry>
@@ -11,8 +12,7 @@
     </visual>
   </link>
 
-  <link
-    name="base_link">
+  <link name="base_link">
     <inertial>
       <origin
         xyz="0.0118126683718567 5.32907051820075E-15 0.0168264325274268"
@@ -33,7 +33,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/base_link.STL" />
+          filename="package://assembly2/models/robot/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -47,7 +47,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/base_link.STL" />
+          filename="package://assembly2/models/robot/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -58,10 +58,7 @@
         <origin xyz="0 0 0.055" />
   </joint>
 
-  
-
-  <link
-    name="Empty_front_Link">
+  <link name="Empty_front_Link">
     <inertial>
       <origin
         xyz="0 0 0"
@@ -82,7 +79,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_front_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_front_Link.STL" />
       </geometry>
       <material
         name="">
@@ -96,12 +93,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_front_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_front_Link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="Empty_front_Joint"
+
+  <joint name="Empty_front_Joint"
     type="continuous">
     <origin
       xyz="0.32 0 0.046"
@@ -113,8 +110,8 @@
     <axis
       xyz="0 1 0" />
   </joint>
-  <link
-    name="Empty_left_Link">
+  
+  <link name="Empty_left_Link">
     <inertial>
       <origin
         xyz="0 0 0"
@@ -135,7 +132,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_left_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_left_Link.STL" />
       </geometry>
       <material
         name="">
@@ -149,12 +146,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_left_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_left_Link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="Empty_left_Joint"
+
+  <joint name="Empty_left_Joint"
     type="continuous">
     <origin
       xyz="-0.16 0.27713 0.046"
@@ -166,8 +163,8 @@
     <axis
       xyz="0 1 0" />
   </joint>
-  <link
-    name="Empty_right_Link">
+
+  <link name="Empty_right_Link">
     <inertial>
       <origin
         xyz="0 0 0"
@@ -188,7 +185,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_right_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_right_Link.STL" />
       </geometry>
       <material
         name="">
@@ -202,12 +199,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://assembly2/meshes/Empty_right_Link.STL" />
+          filename="package://assembly2/models/robot/meshes/Empty_right_Link.STL" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="Empty_right_Joint"
+
+  <joint name="Empty_right_Joint"
     type="continuous">
     <origin
       xyz="-0.16 -0.27713 0.046"
@@ -219,4 +216,28 @@
     <axis
       xyz="0 1 0" />
   </joint>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="Empty_front_Link">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  <gazebo reference="Empty_left_Link">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  <gazebo reference="Empty_right_Link">
+    <material>Gazebo/Red</material>
+  </gazebo>
+
+<!-- <plugin name="test" filename="libjoint_controller.so">
+  <jointname>Empty_front_Joint</jointname>
+  <p_gain_pos>1</p_gain_pos>
+  <i_gain_pos>0</i_gain_pos>
+  <d_gain_pos>0</d_gain_pos>
+  <p_gain_vel>1</p_gain_pos>
+  <i_gain_vel>0</i_gain_pos>
+  <d_gain_vel>0</d_gain_pos>
+</plugin> -->
+<!-- gz sdf -p my_model.urdf > my_model.sdf -->
 </robot>

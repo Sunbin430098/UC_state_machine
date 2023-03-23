@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 
-<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
-
+<robot name="robot"  xmlns:xacro="http://www.ros.org/wiki/xacro">
 
 	<xacro:property name="length_wheel" value="0.05" />
 	<xacro:property name="radius_wheel" value="0.06" />
@@ -279,9 +278,9 @@
 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <!-- <geometry>
+      <geometry>
         <mesh filename="package://gazebo_pkg/meshes/hokuyo.dae"/>
-      </geometry> -->
+      </geometry>
     </visual>
 
     <inertial>
@@ -317,16 +316,6 @@
  </gazebo>
 
 
-  <!-- ros_control plugin -->
-<!--   <gazebo>
-    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-      <robotNamespace>/robot</robotNamespace>
-       <legacyModeNS> true </legacyModeNS>   
-    </plugin>
-  </gazebo> -->
-
-  
-
   <!-- camera_link -->
   <gazebo reference="camera_link">   
     <material>Gazebo/Red</material>
@@ -335,8 +324,6 @@
   <!-- hokuyo -->
   <gazebo reference="laser_frame">
     <sensor type="ray" name="head_hokuyo_sensor">
-   <!-- <sensor type="gpu_ray" name="head_hokuyo_sensor">   -->
-    <!-- GPU -->
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>15</update_rate>
@@ -356,16 +343,11 @@
         </range>
         <noise>
           <type>gaussian</type>
-          <!-- Noise parameters based on published spec for Hokuyo laser
-               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
-               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
-               reading. -->
+
           <mean>0.0</mean>
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <!-- GPU版本 -->
-      <!-- <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">  -->
       <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
         <topicName>/scan</topicName>
         <frameName>laser_frame</frameName>
@@ -374,7 +356,7 @@
   </gazebo>
 
   <!-- camera -->
-  <gazebo reference="camera_link">
+  <!-- <gazebo reference="camera_link">
     <sensor type="camera" name="camera1">
       <update_rate>30.0</update_rate>
       <camera name="head">
@@ -390,9 +372,7 @@
         </clip>
         <noise>
           <type>gaussian</type>
-          <!-- Noise is sampled independently per pixel on each frame.  
-               That pixel's noise value is added to each of its color
-               channels, which at that point lie in the range [0,1]. -->
+         
           <mean>0.0</mean>
           <stddev>0.007</stddev>
         </noise>
@@ -412,28 +392,9 @@
         <distortionT2>0.0</distortionT2>
       </plugin>
     </sensor>
-  </gazebo>  
+  </gazebo>   -->
 
   <!-- Drive controller -->
-<!--<gazebo>-->
-<!--  <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">-->
-<!--    <alwaysOn>true</alwaysOn>-->
-<!--    <updateRate>100.0</updateRate>-->
-<!--    <robotNamespace>/</robotNamespace>-->
-<!--    <leftFrontJoint>base_to_wheel1</leftFrontJoint>-->
-<!--    <rightFrontJoint>base_to_wheel3</rightFrontJoint>-->
-<!--    <leftRearJoint>base_to_wheel2</leftRearJoint>-->
-<!--    <rightRearJoint>base_to_wheel4</rightRearJoint>-->
-<!--    <wheelSeparation>0.26</wheelSeparation>-->
-<!--    <wheelDiameter>0.12</wheelDiameter>-->
-<!--    <torque>2</torque>-->
-<!--    <commandTopic>cmd_vel</commandTopic>-->
-<!--    <odometryTopic>odom</odometryTopic>-->
-<!--    <odometryFrame>odom</odometryFrame>-->
-<!--    <robotBaseFrame>dummy</robotBaseFrame>-->
-<!--    <broadcastTF>1</broadcastTF>-->
-<!--  </plugin>-->
-<!--</gazebo>-->
 
 <gazebo>
   <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
@@ -455,10 +416,9 @@
   </plugin>
 </gazebo>
 
-
 <!-- imu控制 -->
 
-   <gazebo reference="imu_link">
+   <!-- <gazebo reference="imu_link">
         <material>Gazebo/Orange</material>
         <gravity>true</gravity>
         <sensor name="imu_sensor" type="imu">
@@ -477,7 +437,17 @@
             </plugin>
             <pose>0 0 0 0 0 0</pose>
         </sensor>
-    </gazebo>
+    </gazebo> -->
+
+<plugin name="arest" filename="libjoint_controller.so">
+  <jointname>base_to_wheel1</jointname>
+  <p_gain_pos>1</p_gain_pos>
+  <i_gain_pos>0</i_gain_pos>
+  <d_gain_pos>0</d_gain_pos>
+  <p_gain_vel>1</p_gain_pos>
+  <i_gain_vel>0</i_gain_pos>
+  <d_gain_vel>0</d_gain_pos>
+</plugin>
 
 <!-- gazebo插件设置相关结束 -->
 

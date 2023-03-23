@@ -204,7 +204,6 @@ public:
                 point.z = it(2);
                 wayPointsMarker.points.push_back(point);
             }
-
             wayPointsPub.publish(wayPointsMarker);
         }
 
@@ -509,7 +508,6 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
 
 void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
-    
     ros::NodeHandle nh_priv("~");
     Config config(nh_priv);
     Visualizer viz(config, nh_);
@@ -588,6 +586,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             {
                 viz.visualize(traj, wPs, 0);
                 ros::Duration time_diff = ros::Time::now() - begin;
+                //实际x为0,y为1
                 motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
                 motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
                 if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()< traj.getTotalDuration()+0.15)

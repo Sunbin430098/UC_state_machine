@@ -40,6 +40,9 @@ target_link_libraries(example0_node
 target_link_libraries(traj_plan
   ${catkin_LIBRARIES}
 )
+link_directories(
+  ${catkin_LIB_DIRS}
+)
 target_link_libraries(traj_plan_3D
   ${catkin_LIBRARIES}
 )

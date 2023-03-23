@@ -14,12 +14,12 @@
     <include file="$(find nav_traj_plan)/launch/wtr_joy.launch" />
 
     <!-- 加载教学模型车 -->
-    <!-- <include file="$(find urdf01_rviz)/launch/demo07_control.launch" />      -->
+    <!-- <include file="$(find urdf01_rviz)/launch/car.launch" />      -->
     <!--加载比赛车 -->
-    <!-- <include file="$(find assembly2)/launch/display.launch" /> -->      
-    <!-- <include file="$(find assembly2)/launch/gazebo.launch" /> -->
+    <include file="$(find assembly2)/launch/display.launch" />      
+    <include file="$(find assembly2)/launch/gazebo.launch" />
     <!-- <include file="$(find assembly2)/launch/arbotix.launch" /> -->
     <!-- 加载nb车 -->
-    <include file="$(find gazebo_pkg)/launch/nowall.launch" />
+    <!-- <include file="$(find gazebo_pkg)/launch/nowall.launch" /> -->
 
 </launch>

@@ -10,6 +10,7 @@ project(gazebo_pkg)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+find_package(gazebo REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -109,20 +110,26 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  # ${GAZEBO_INCLUDE_DIRS}
   )
-# include_directories("/home/ubuntu/wtr_upmachine_ws/src/gazebo_car-master/include")
-# include_directories("/usr/include/ignition/math4/ignition/math")
-## Declare a C++ library
-add_library(joint_controller
-  src/joint_controller.cpp
-)
 
+
+  
+## Declare a C++ library
+add_library(joint_controller  SHARED  src/joint_controller.cpp)
+link_directories(
+  # gazebo_pkg/lib        
+  ${catkin_LIB_DIRS}
+)
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -146,6 +153,7 @@ add_dependencies(joint_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 ## Specify libraries to link a library or executable target against
 target_link_libraries(joint_controller
   ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
 )
 
 #############
@@ -179,7 +187,7 @@ target_link_libraries(joint_controller
 ## Mark cpp header files for installation
  install(DIRECTORY
    launch meshes urdf world
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
  )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)

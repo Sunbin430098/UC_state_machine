@@ -15,7 +15,12 @@ for assembly robot</p>
   <depend>rviz</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>gazebo</depend>
+
+  <!-- <depend>gazebo_ros</depend> -->
   <export>
     <architecture_independent />
+    <!-- <gazebo_ros gazebo_media_path="${prefix}"/>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/> -->
   </export>
+
 </package>

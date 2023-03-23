@@ -8,6 +8,10 @@ catkin_package()
 
 find_package(roslaunch)
 
+link_directories(
+  ${catkin_LIB_DIRS} lib
+)
+
 foreach(dir config launch meshes urdf)
 	install(DIRECTORY ${dir}/
 		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
