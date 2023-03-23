@@ -15,7 +15,10 @@ for assembly robot</p>
   <depend>rviz</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>gazebo</depend>
-
+  
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
   <!-- <depend>gazebo_ros</depend> -->
   <export>
     <architecture_independent />
