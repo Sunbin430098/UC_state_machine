@@ -26,4 +26,10 @@ for assembly robot</p>
     <gazebo_ros gazebo_model_path="${prefix}/models"/> -->
   </export>
 
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>tf</build_depend>
+
+
 </package>

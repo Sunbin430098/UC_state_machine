@@ -12,6 +12,14 @@
 #include <vector>
 #include <string>
 
+#include <tf/transform_broadcaster.h>
+#include <nav_msgs/Odometry.h>
+#include "tf2_ros/transform_listener.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "geometry_msgs/PointStamped.h"
+
 using namespace Eigen;
 using namespace std;
 using namespace ros;
@@ -268,10 +276,12 @@ class TrajPlan_3D
         TrajPlan_3D();
         void pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg);
         void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+        void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
         ros::Subscriber joy_sub;
+        
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
         void motion_plan_callback(const ros::TimerEvent &e);
@@ -298,7 +308,12 @@ class TrajPlan_3D
         ros::Publisher motion_pub;  
         ros::Publisher sim_motion_pub;
             // mavros_msgs::Speed motion_msg;
-        geometry_msgs::Twist motion_msg;    
+        geometry_msgs::Twist motion_msg;
+
+        ros::Subscriber odom_sub; 
+        tf::TransformBroadcaster odom_link_broadcaster; 
+        tf::TransformBroadcaster odom_world_broadcaster; 
+        tf2_ros::Buffer buffer; 
 };
 
 TrajPlan_3D::TrajPlan_3D()
@@ -308,7 +323,7 @@ TrajPlan_3D::TrajPlan_3D()
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
     sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
     joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
-
+    odom_sub = nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::odomCallback,this);
     //process1-----------------param--------------------
     nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
 
@@ -367,6 +382,46 @@ TrajPlan_3D::TrajPlan_3D()
         base_count += 3*TempPointArray_[i];
         std::cout<<" "<<std::endl;
     }
+}
+
+void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
+{
+    ros::Time current_time = ros::Time::now();
+    // double x = 0.0;
+    // double y = 0.0;
+    // double th = 0.0;
+    // double dt = 0.05;
+    // double delta_x = (motion_msg.linear.x * cos(motion_msg.angular.z) - motion_msg.linear.y * sin(motion_msg.angular.z)) * dt;
+    // double delta_y = (motion_msg.linear.x * sin(motion_msg.angular.z) + motion_msg.linear.y * cos(motion_msg.angular.z)) * dt;
+    // double delta_th = motion_msg.angular.z * dt;
+    // x += delta_x;
+    // y += delta_y;
+    // th += delta_th;
+
+    // geometry_msgs::Quaternion odom_link_quat = tf::createQuaternionMsgFromYaw(th);
+    // geometry_msgs::TransformStamped odom_link_trans;
+    // odom_link_trans.header.stamp = current_time;
+    // odom_link_trans.header.frame_id = "wtr_robot_odom";
+    // odom_link_trans.child_frame_id = "base_footprint";
+    // odom_link_trans.transform.translation.x = x;
+    // odom_link_trans.transform.translation.y = y;
+    // odom_link_trans.transform.translation.z = 0.0;
+    // odom_link_trans.transform.rotation = odom_link_quat;
+    // odom_link_broadcaster.sendTransform(odom_link_trans);
+
+    geometry_msgs::TransformStamped odom_world_trans;
+    odom_world_trans.header.stamp = current_time;
+    odom_world_trans.header.frame_id = "world";
+    odom_world_trans.child_frame_id = "base_footprint";
+    odom_world_trans.transform.translation.x = odom->pose.pose.position.x;
+    odom_world_trans.transform.translation.y = odom->pose.pose.position.y;
+    odom_world_trans.transform.translation.z = 0;
+    odom_world_trans.transform.rotation = odom->pose.pose.orientation;
+    odom_world_broadcaster.sendTransform(odom_world_trans);
+
+    // tf2_ros::TransformListener listener(TrajPlan_3D::buffer);  
+    // geometry_msgs::TransformStamped tfs = buffer.lookupTransform("world","wtr_robot_odom",ros::Time(0));
+
 }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)

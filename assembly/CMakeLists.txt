@@ -4,6 +4,9 @@ project(assembly2)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  nav_msgs
+  rospy
+  tf
 )
 
 find_package(catkin REQUIRED)

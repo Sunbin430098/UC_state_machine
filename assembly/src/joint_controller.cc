@@ -43,37 +43,37 @@ namespace gazebo
       if (_sdf->HasElement("p_gain_pos"))
       {
         p_gain_pos = _sdf->Get<double>("p_gain_pos");
-        std::cout<<"p_gain_pos ok\n";
+        // std::cout<<"p_gain_pos ok\n";
       }
         
       if (_sdf->HasElement("i_gain_pos"))
       {
         i_gain_pos = _sdf->Get<double>("i_gain_pos");
-        std::cout<<"i_gain_pos ok\n";
+        // std::cout<<"i_gain_pos ok\n";
       }
         
       if (_sdf->HasElement("d_gain_pos"))
       {
         d_gain_pos = _sdf->Get<double>("d_gain_pos");
-        std::cout<<"d_gain_pos ok\n";
+        // std::cout<<"d_gain_pos ok\n";
       }
 
       if (_sdf->HasElement("p_gain_vel"))
       {
         p_gain_vel = _sdf->Get<double>("p_gain_vel");
-        std::cout<<"p_gain_vel ok\n";
+        // std::cout<<"p_gain_vel ok\n";
       }
         
       if (_sdf->HasElement("i_gain_vel"))
       {
         i_gain_vel = _sdf->Get<double>("i_gain_vel");
-        std::cout<<"i_gain_vel ok\n";
+        // std::cout<<"i_gain_vel ok\n";
       }
         
       if (_sdf->HasElement("d_gain_vel"))
       {
         d_gain_vel = _sdf->Get<double>("d_gain_vel");
-        std::cout<<"d_gain_vel ok\n";
+        // std::cout<<"d_gain_vel ok\n";
       }
         
       this->model = _mode;

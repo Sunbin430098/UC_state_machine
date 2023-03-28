@@ -1,12 +1,12 @@
 <launch>
     <!-- 设置地图的配置文件 -->
     <arg name="map" default="t3_-139.yaml" />
-    <!-- 运行地图服务器，并且加载设置的地图-->
+    <!-- 运行地图服务器，并且加载设置的地图 -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_traj_plan)/map/$(arg map)"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 40" />
+    <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 map world   40" />
 
     <!-- amcl定位计算地图到里程计坐标系变换 -->
-    <include file="$(find nav_traj_plan)/launch/amcl.launch" />
+    <!-- <include file="$(find nav_traj_plan)/launch/amcl.launch" /> -->
 
 </launch>
