@@ -11,6 +11,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <vector>
 #include <string>
+#include <std_msgs/Float32.h>
 
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
@@ -19,6 +20,12 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/PointStamped.h"
+
+#include "nav_traj_plan/joint.h"
+#include "std_msgs/Float32MultiArray.h"
+nav_traj_plan::joint SimData;
+std_msgs::Float32MultiArray my_SimData[3] ;
+std_msgs::Float32 msg;
 
 using namespace Eigen;
 using namespace std;
@@ -314,10 +321,22 @@ class TrajPlan_3D
         tf::TransformBroadcaster odom_link_broadcaster; 
         tf::TransformBroadcaster odom_world_broadcaster; 
         tf2_ros::Buffer buffer; 
+
+        ros::Publisher pub1;
+        ros::Publisher pub2;
+        ros::Publisher pub3;
 };
 
 TrajPlan_3D::TrajPlan_3D()
 {
+    // pub1 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
+    // pub2 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
+    // pub3 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+    pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
+    pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
+    pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+
+
     point_count = 1;
     point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
     motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
@@ -639,6 +658,12 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             ros::Time begin = ros::Time::now();
             while (ros::ok())
             {
+                // SimData.vel_cmd = 3;
+                // pub1.publish(SimData.vel_cmd);
+                // pub2.publish(SimData.vel_cmd);
+                // pub3.publish(SimData.vel_cmd);
+
+                
                 viz.visualize(traj, wPs, 0);
                 ros::Duration time_diff = ros::Time::now() - begin;
                 //实际x为0,y为1
@@ -662,6 +687,11 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 motion_pub.publish(motion_msg);
                 sim_motion_pub.publish(motion_msg);
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
+                msg.data = 2;
+                pub1.publish(msg);
+                pub2.publish(msg);
+                pub3.publish(msg);
+                ROS_INFO("sim data vel = %f",msg.data);
                 rate.sleep();
             }
             int popTemp;

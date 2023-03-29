@@ -47,7 +47,7 @@
         <i_gain_vel>0</i_gain_vel>
         <d_gain_vel>0</d_gain_vel>
       </plugin>
-<!-- 发布位姿 -->
+      <!-- 发布base_footprint位姿 -->
       <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>50.0</updateRate>

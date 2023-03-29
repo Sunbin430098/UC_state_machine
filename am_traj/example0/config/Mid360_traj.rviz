@@ -8,9 +8,7 @@ Panels:
         - /Grid1
         - /MarkerArray1
         - /RobotModel1
-        - /RobotModel1/Status1
         - /TF1
-        - /TF1/Status1
       Splitter Ratio: 0.5
     Tree Height: 728
   - Class: rviz/Selection
@@ -70,7 +68,7 @@ Visualization Manager:
       Marker Topic: /example0/route
       Name: Marker
       Namespaces:
-        {}
+        route: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -78,7 +76,7 @@ Visualization Manager:
       Marker Topic: /example0/trajectory
       Name: Marker
       Namespaces:
-        {}
+        trajectory: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -86,7 +84,7 @@ Visualization Manager:
       Marker Topic: /example0/waypoints
       Name: Marker
       Namespaces:
-        {}
+        waypoints: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -94,7 +92,7 @@ Visualization Manager:
       Marker Topic: /example0/acc
       Name: MarkerArray
       Namespaces:
-        {}
+        acc: true
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988079071
@@ -138,18 +136,43 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
+        Empty_front_Link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        Empty_left_Link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        Empty_right_Link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Class: rviz/TF
       Enabled: true
@@ -168,8 +191,6 @@ Visualization Manager:
           Value: true
         map:
           Value: true
-        odom:
-          Value: true
         world:
           Value: true
       Marker Scale: 1
@@ -178,18 +199,16 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_footprint:
-            Empty_left_Link:
-              {}
-            Empty_right_Link:
-              {}
-            base_link:
-              Empty_front_Link:
-                {}
-        world:
-          map:
-            {}
+        map:
+          world:
+            base_footprint:
+              base_link:
+                Empty_front_Link:
+                  {}
+                Empty_left_Link:
+                  {}
+                Empty_right_Link:
+                  {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -222,25 +241,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.1877162456512451
+      Distance: 0.4294723570346832
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.7202415466308594
-        Y: 0.1738884299993515
-        Z: 1.6662821769714355
+        X: 2.626901388168335
+        Y: 3.616410732269287
+        Z: 1.9354966878890991
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8197972774505615
+      Pitch: 0.41479766368865967
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.08999021351337433
+      Yaw: 0.6749901175498962
     Saved: ~
 Window Geometry:
   Displays:

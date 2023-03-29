@@ -7,10 +7,12 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   rospy
   tf
+  std_msgs
 )
 
 find_package(catkin REQUIRED)
 find_package(gazebo REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 catkin_package()
 
@@ -20,6 +22,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 link_directories(
@@ -37,3 +40,8 @@ target_link_libraries(my_joint_controller
 ${catkin_LIBRARIES} 
 ${GAZEBO_LIBRARIES}
 )
+
+# add_executable(sim_control src/sim_control.cpp)
+# target_link_libraries(sim_control
+#   ${catkin_LIBRARIES}
+# )
