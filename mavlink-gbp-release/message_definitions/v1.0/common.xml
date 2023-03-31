@@ -7344,32 +7344,29 @@
       <field type="uint8_t" name="num_ids">number of IDs in filter list</field>
       <field type="uint16_t[16]" name="ids">filter IDs, length num_ids</field>
     </message>
-    <message id="9" name="SPEED_CONTROL_SET">
-    <description>Up Machine Send</description>
-    <field type="float" name="vx_set">float</field>
-    <field type="float" name="vy_set">float</field>
-    <field type="float" name="vw_set">float</field>
+    <message id="9" name="CONTROL_SET">
+    <description>接收来自上位机的消息</description>
+    <field type="float" name="vx_set">x 方向速度</field>
+    <field type="float" name="vy_set">y 方向速度</field>
+    <field type="float" name="vw_set">z 方向角速度</field>
+    <field type="float" name="x_set">x 方向速度</field>
+    <field type="float" name="y_set">y 方向速度</field>
+    <field type="float" name="w_set">z 方向角速度</field>
     </message>
     <message id="10" name="SPEED_CONTROL_STATUS">
-    <description>Up Machine Receive</description>
+    <description>Speed control system mavlink message</description>
     <field type="float" name="vx_state">float</field>
     <field type="float" name="vy_state">float</field>
     <field type="float" name="vw_state">float</field>
     </message>
-    <message id="12" name="DISK_DATA">
-    <description>data of encode disk</description>
-    <field type="float" name="yaw">float</field>
-    <field type="float" name="roll">float</field>
-    <field type="float" name="pitch">float</field>
-    <field type="float" name="x">float</field>
-    <field type="float" name="y">float</field>
-    <field type="float" name="w">float</field>
-    </message>
-    <message id="13" name="V_SET">
-    <description>data of velocity</description>
-    <field type="float" name="vx">float</field>
-    <field type="float" name="vy">float</field>
-    <field type="float" name="vw">float</field>
+    <message id="12" name="POSTURE">
+      <description>把轮式平面定位系统的数据发到上位机</description>
+      <field type="float" name="pos_x">x 坐标</field>
+      <field type="float" name="pos_y">y 位置</field>
+      <field type="float" name="zangle">航向角</field>
+      <field type="float" name="xangle">横滚角</field>
+      <field type="float" name="yangle">俯仰角</field>
+      <field type="float" name="w_z">航向角速度</field>
     </message>
     <!-- Rover specific messages -->
     <message id="9000" name="WHEEL_DISTANCE">

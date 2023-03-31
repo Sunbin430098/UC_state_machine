@@ -335,11 +335,11 @@ TrajPlan_3D::TrajPlan_3D()
     pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
     pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
     pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
-
+    msg.data = 60;
 
     point_count = 1;
     point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
-    motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
+    motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/send_topic",10);
     sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
     joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
     odom_sub = nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::odomCallback,this);
@@ -687,13 +687,14 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 motion_pub.publish(motion_msg);
                 sim_motion_pub.publish(motion_msg);
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
-                msg.data = 2;
+                
                 pub1.publish(msg);
                 pub2.publish(msg);
                 pub3.publish(msg);
                 ROS_INFO("sim data vel = %f",msg.data);
                 rate.sleep();
             }
+            msg.data+=60;
             int popTemp;
             if(IntervalNumber_ != start){popTemp=0;}
             else{popTemp=1;}

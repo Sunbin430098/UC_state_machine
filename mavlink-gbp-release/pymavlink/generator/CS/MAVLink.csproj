@@ -16,11 +16,11 @@
     <Copyright>Michael Oborne</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseUrl>GPLv3</PackageLicenseUrl>
-    <Signassembly>false</Signassembly>
-    <assemblyOriginatorKeyFile>mykey.snk</assemblyOriginatorKeyFile>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>mykey.snk</AssemblyOriginatorKeyFile>
     <Configurations>Debug;Release</Configurations>
     <FileVersion>1.0.5.0</FileVersion>
-    <assemblyVersion>1.0.0.0</assemblyVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <RepositoryUrl>https://github.com/ArduPilot/MissionPlanner/tree/master/ExtLibs/Mavlink</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
   </PropertyGroup>
