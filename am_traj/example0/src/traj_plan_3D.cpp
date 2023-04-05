@@ -401,6 +401,8 @@ TrajPlan_3D::TrajPlan_3D()
         base_count += 3*TempPointArray_[i];
         std::cout<<" "<<std::endl;
     }
+    // //process5-----------------param--------------------
+    // nh_.getParam("/traj_plan_3D/MaxParts_",maxParts_);
 }
 
 void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
@@ -586,7 +588,8 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     Config config(nh_priv);
     Visualizer viz(config, nh_);
     ros::Rate rate(10);
-    AmTraj amTrajOpt(1024.0, 32.0, 1.0, 1.5, 0.8, 32, 0.02);
+    // AmTraj amTrajOpt(1024.0, 32.0, 1.0, 1.5, 0.8, 32, 0.02);
+    AmTraj amTrajOpt(config.weightT, config.weightAcc, config.weightJerk,config.maxVelRate, config.maxAccRate, config.iterations, config.epsilon);
     Eigen::Vector3d iV(-0.015, -0.01, 0.0), fV(0.0, 0.0, 0.0);
     Eigen::Vector3d iA(0.0, 0.0, 0.0), fA(0.0, 0.0, 0.0); //规定航点处的速度和加速度
 

@@ -16,7 +16,7 @@ WeightJerk:                  0.4
 
 MaxAccRate:                  1.50
 
-MaxVelRate:                  0.80
+MaxVelRate:                  2
 
 Iterations:                  23
 
@@ -42,7 +42,7 @@ PointSet:                 [ 0.0,      0.0,    0.0,
                             4,      5,        0.0]           
 MaxPointSetNumber:              15         #3*3,PointSet元素个数，即坐标点数*3
 
-#process4
+#process4(该流程ER取环射环更方便，缺少避障功能同时对RR还需更改)
 #Set the coordinate points of multiple segments
                              #x       #y      #z
 PointSet_:                 [0,      0,      0.0,           
@@ -66,3 +66,7 @@ PointSet_:                 [0,      0,      0.0,
 MaxPointSetNumber_:              42       #上面一维数组元素总数
 PointArray_:                 [3,3,4,4]    #每个区段的点数(能力有限，应与坐标元素数组间隔一一对应)
 MaxParts_:                       4        #此值小于等于PointArray_元素个数即可
+
+#process5(based on process4，主要用于RR,扫出地图之后结合添加避障功能)
+#到达射环区
+

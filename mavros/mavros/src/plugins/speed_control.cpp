@@ -3,7 +3,7 @@
  * @file speed_control.cpp
  * @addtogroup plugin
  */
- 
+
 #include <mavros/mavros_plugin.h>
 #include <mavros_msgs/SpeedControlStatus.h>
 #include "mavros_msgs/SpeedControlSet.h"
@@ -127,11 +127,14 @@ private:
 	void send_callback_subscribe(const geometry_msgs::Twist::ConstPtr& speed_p)
 	{
 		mavlink::common::msg::CONTROL_SET msg;
-		msg.vw_set = speed_p->angular.z;
-		msg.vy_set = speed_p->linear.y;
-		msg.vx_set = speed_p->linear.x;
-
+		// msg.vw_set = speed_p->angular.z;
+		// msg.vy_set = speed_p->linear.y;
+		// msg.vx_set = speed_p->linear.x;
+		msg.vw_set = 1;
+		msg.vy_set = 2;
+		msg.vx_set = 3;
 		ROS_INFO("send_callback succcess!");
+		ROS_INFO("vx=%f,vy=%f,vw=%f",msg.vx_set,msg.vy_set,msg.vw_set);
 		UAS_FCU(m_uas)->send_message_ignore_drop(msg);
 	} 
 	
