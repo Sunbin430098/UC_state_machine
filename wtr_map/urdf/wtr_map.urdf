@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="wtr_map">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.000931113698529841 0.00682478761323447 0.142492659866858"
+        rpy="0 0 0" />
+      <mass
+        value="24189.8499168554" />
+      <inertia
+        ixx="201241.60019725"
+        ixy="-22.1780036391344"
+        ixz="0.0600350820872066"
+        iyy="201033.885443341"
+        iyz="0.581278555460463"
+        izz="401340.892397548" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wtr_map/meshes/base_link.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wtr_map/meshes/base_link.stl" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

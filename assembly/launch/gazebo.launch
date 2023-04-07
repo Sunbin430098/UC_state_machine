@@ -5,11 +5,12 @@
   <node pkg="gazebo_ros" type="spawn_model" name="urdf_model" args="-urdf -model mycar -param robot_description"  />
  -->
 
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find assembly2)/world/assembly.world"/> 
-  </include>
+  </include> -->
 
-<!-- <node name="tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 map wtr_robot_odom 100" /> -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  </include>
 
 </launch>
 
