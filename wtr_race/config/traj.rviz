@@ -64,7 +64,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /example0/route
+      Marker Topic: /wtr/route
       Name: Marker
       Namespaces:
         {}
@@ -72,7 +72,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /example0/trajectory
+      Marker Topic: /wtr/trajectory
       Name: Marker
       Namespaces:
         {}
@@ -80,7 +80,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /example0/waypoints
+      Marker Topic: /wtr/waypoints
       Name: Marker
       Namespaces:
         {}
@@ -88,7 +88,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /example0/acc
+      Marker Topic: /wtr/acc
       Name: MarkerArray
       Namespaces:
         {}
@@ -182,7 +182,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.4294723570346832
+      Distance: 1.815492868423462
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

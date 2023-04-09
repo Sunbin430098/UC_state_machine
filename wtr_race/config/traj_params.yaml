@@ -1,0 +1,75 @@
+# Topics Advertised
+TrajectoryTopic:            '/wtr/trajectory'
+WayPointsTopic:             '/wtr/waypoints'
+RouteTopic:                 '/wtr/route'
+AccTopic:                   '/wtr/acc'
+
+# Frame Name
+FrameName:                  'world'
+
+# Params
+WeightT:                     1024.0
+
+WeightAcc:                   16.0
+
+WeightJerk:                  0.4
+
+MaxAccRate:                  1.50
+
+MaxVelRate:                  2
+
+Iterations:                  23
+
+Epsilon:                     0.02
+
+##process1
+# Number of Points 
+PointNumber:                   3
+
+#process2
+#Different Number of Points in every part .cpp文件中maxPointParts设置20,最多区间小于20即可
+PointArray:                   [3,3,4,4]
+#Maximum segment  此值小于等于PointArray元素个数即可
+MaxParts:                       3
+
+#process3
+#The point coordinates to be passed in
+                             #x       #y      #z
+PointSet:                 [ 0.0,      0.0,    0.0,           
+                            1,      2,        0.0,            
+                            2,      3,        0.0,
+                            3,      4,        0.0,
+                            4,      5,        0.0]           
+MaxPointSetNumber:              15         #3*3,PointSet元素个数，即坐标点数*3
+
+#process4(该流程ER取环射环更方便，缺少避障功能同时对RR还需更改)
+#Set the coordinate points of multiple segments
+                             #x       #y      #z
+PointSet_:                 [0,      0,      0.0,           
+                            1,      2,      0.0,            
+                            2,      3,      0.0,
+
+                            3,      4,      0.0,
+                            4,      5,      0.0,
+                            5,      6,      0.0,
+                            
+                            6,      7,      0.0,
+                            7,      8,      0.0,
+                            8,      9,      0.0,
+                            9,      10,     0.0,
+
+                            10,     11,     0.0,
+                            11,     12,     0.0,
+                            12,     13,     0.0,
+                            13,     14,     0.0
+                            ]   
+MaxPointSetNumber_:              42       #上面一维数组元素总数
+PointArray_:                 [3,3,4,4]    #每个区段的点数(能力有限，应与坐标元素数组间隔一一对应)
+MaxParts_:                       4        #此值小于等于PointArray_元素个数即可
+
+#process5(based on process4，主要用于RR,扫出地图之后结合添加避障功能)
+#射环区                     
+FireZoneA:                     [1,2,0]
+FireZoneB:                     [5,4,0]
+FireZoneC:                     [4,7,0]
+StartZone:                     [0,0,0]
