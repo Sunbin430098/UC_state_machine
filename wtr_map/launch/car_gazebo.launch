@@ -1,0 +1,11 @@
+<launch>
+    <!-- 运行本文件即可加载场地和车 -->
+    <param name="robot_description" command="$(find xacro)/xacro $(find wtr_map)/urdf/xacro/my_car.urdf.xacro" />
+    
+    <include file="$(find gazebo_ros)/launch/empty_world.launch" >
+        <arg name="world_name" value="$(find wtr_map)/worlds/wtr_map.world" />
+    </include>
+    
+    <node pkg="gazebo_ros" type="spawn_model" name="model" args="-urdf -model mycar -param robot_description"  />
+        
+</launch>

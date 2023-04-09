@@ -22,7 +22,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   tf2_eigen
   tf2_ros
-  trajectory_msgs
+  # trajectory_msgs
+  message_generation
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -152,8 +154,7 @@ add_library(mavros_plugins
   src/plugins/waypoint.cpp
   src/plugins/wind_estimation.cpp
   src/plugins/speed_control.cpp #add
-  src/plugins/my_ros_ctrl/pose.cpp
-
+  src/plugins/posture.cpp #add
 )
 add_dependencies(mavros_plugins
   mavros
@@ -182,6 +183,7 @@ target_link_libraries(gcs_bridge
   mavros
   ${catkin_LIBRARIES}
 )
+
 
 #############
 ## Install ##

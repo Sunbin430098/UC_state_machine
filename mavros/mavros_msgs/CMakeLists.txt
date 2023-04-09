@@ -73,8 +73,8 @@ add_message_files(
   WaypointReached.msg
   WheelOdomStamped.msg
   SpeedControlStatus.msg
-  Disk.msg
-  Speed.msg
+  SpeedControlSet_sub.msg
+  Posture.msg
 )
 
 add_service_files(

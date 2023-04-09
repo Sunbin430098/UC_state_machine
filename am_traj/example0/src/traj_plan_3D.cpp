@@ -11,6 +11,21 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <vector>
 #include <string>
+#include <std_msgs/Float32.h>
+
+#include <tf/transform_broadcaster.h>
+#include <nav_msgs/Odometry.h>
+#include "tf2_ros/transform_listener.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "geometry_msgs/PointStamped.h"
+
+#include "nav_traj_plan/joint.h"
+#include "std_msgs/Float32MultiArray.h"
+nav_traj_plan::joint SimData;
+std_msgs::Float32MultiArray my_SimData[3] ;
+std_msgs::Float32 msg;
 
 using namespace Eigen;
 using namespace std;
@@ -204,7 +219,6 @@ public:
                 point.z = it(2);
                 wayPointsMarker.points.push_back(point);
             }
-
             wayPointsPub.publish(wayPointsMarker);
         }
 
@@ -269,10 +283,12 @@ class TrajPlan_3D
         TrajPlan_3D();
         void pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg);
         void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+        void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
         ros::Subscriber joy_sub;
+        
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
         void motion_plan_callback(const ros::TimerEvent &e);
@@ -295,19 +311,38 @@ class TrajPlan_3D
         int IntervalNumber_ = 0;
         int maxPointSetNumber_;
 
-        //mavros communication------
-        ros::Publisher motion_pub;
-        // mavros_msgs::Speed motion_msg;
+        //mavros simulator communication-----------
+        ros::Publisher motion_pub;  
+        ros::Publisher sim_motion_pub;
+            // mavros_msgs::Speed motion_msg;
         geometry_msgs::Twist motion_msg;
+
+        ros::Subscriber odom_sub; 
+        tf::TransformBroadcaster odom_link_broadcaster; 
+        tf::TransformBroadcaster odom_world_broadcaster; 
+        tf2_ros::Buffer buffer; 
+
+        ros::Publisher pub1;
+        ros::Publisher pub2;
+        ros::Publisher pub3;
 };
 
 TrajPlan_3D::TrajPlan_3D()
 {
+    // pub1 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
+    // pub2 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
+    // pub3 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+    pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
+    pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
+    pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+    msg.data = 60;
+
     point_count = 1;
     point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
-    motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/motion_command",10);
+    motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/send_topic",10);
+    sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
     joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
-
+    odom_sub = nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::odomCallback,this);
     //process1-----------------param--------------------
     nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
 
@@ -366,6 +401,48 @@ TrajPlan_3D::TrajPlan_3D()
         base_count += 3*TempPointArray_[i];
         std::cout<<" "<<std::endl;
     }
+    // //process5-----------------param--------------------
+    // nh_.getParam("/traj_plan_3D/MaxParts_",maxParts_);
+}
+
+void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
+{
+    ros::Time current_time = ros::Time::now();
+    // double x = 0.0;
+    // double y = 0.0;
+    // double th = 0.0;
+    // double dt = 0.05;
+    // double delta_x = (motion_msg.linear.x * cos(motion_msg.angular.z) - motion_msg.linear.y * sin(motion_msg.angular.z)) * dt;
+    // double delta_y = (motion_msg.linear.x * sin(motion_msg.angular.z) + motion_msg.linear.y * cos(motion_msg.angular.z)) * dt;
+    // double delta_th = motion_msg.angular.z * dt;
+    // x += delta_x;
+    // y += delta_y;
+    // th += delta_th;
+
+    // geometry_msgs::Quaternion odom_link_quat = tf::createQuaternionMsgFromYaw(th);
+    // geometry_msgs::TransformStamped odom_link_trans;
+    // odom_link_trans.header.stamp = current_time;
+    // odom_link_trans.header.frame_id = "wtr_robot_odom";
+    // odom_link_trans.child_frame_id = "base_footprint";
+    // odom_link_trans.transform.translation.x = x;
+    // odom_link_trans.transform.translation.y = y;
+    // odom_link_trans.transform.translation.z = 0.0;
+    // odom_link_trans.transform.rotation = odom_link_quat;
+    // odom_link_broadcaster.sendTransform(odom_link_trans);
+
+    geometry_msgs::TransformStamped odom_world_trans;
+    odom_world_trans.header.stamp = current_time;
+    odom_world_trans.header.frame_id = "world";
+    odom_world_trans.child_frame_id = "base_footprint";
+    odom_world_trans.transform.translation.x = odom->pose.pose.position.x;
+    odom_world_trans.transform.translation.y = odom->pose.pose.position.y;
+    odom_world_trans.transform.translation.z = 0;
+    odom_world_trans.transform.rotation = odom->pose.pose.orientation;
+    odom_world_broadcaster.sendTransform(odom_world_trans);
+
+    // tf2_ros::TransformListener listener(TrajPlan_3D::buffer);  
+    // geometry_msgs::TransformStamped tfs = buffer.lookupTransform("world","wtr_robot_odom",ros::Time(0));
+
 }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)
@@ -507,12 +584,12 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
 
 void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
-    
     ros::NodeHandle nh_priv("~");
     Config config(nh_priv);
     Visualizer viz(config, nh_);
     ros::Rate rate(10);
-    AmTraj amTrajOpt(1024.0, 32.0, 1.0, 1.5, 0.8, 32, 0.02);
+    // AmTraj amTrajOpt(1024.0, 32.0, 1.0, 1.5, 0.8, 32, 0.02);
+    AmTraj amTrajOpt(config.weightT, config.weightAcc, config.weightJerk,config.maxVelRate, config.maxAccRate, config.iterations, config.epsilon);
     Eigen::Vector3d iV(-0.015, -0.01, 0.0), fV(0.0, 0.0, 0.0);
     Eigen::Vector3d iA(0.0, 0.0, 0.0), fA(0.0, 0.0, 0.0); //规定航点处的速度和加速度
 
@@ -584,8 +661,15 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             ros::Time begin = ros::Time::now();
             while (ros::ok())
             {
+                // SimData.vel_cmd = 3;
+                // pub1.publish(SimData.vel_cmd);
+                // pub2.publish(SimData.vel_cmd);
+                // pub3.publish(SimData.vel_cmd);
+
+                
                 viz.visualize(traj, wPs, 0);
                 ros::Duration time_diff = ros::Time::now() - begin;
+                //实际x为0,y为1
                 motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
                 motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
                 if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()< traj.getTotalDuration()+0.15)
@@ -604,9 +688,16 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     break;
                 }
                 motion_pub.publish(motion_msg);
+                sim_motion_pub.publish(motion_msg);
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
+                
+                pub1.publish(msg);
+                pub2.publish(msg);
+                pub3.publish(msg);
+                ROS_INFO("sim data vel = %f",msg.data);
                 rate.sleep();
             }
+            msg.data+=60;
             int popTemp;
             if(IntervalNumber_ != start){popTemp=0;}
             else{popTemp=1;}

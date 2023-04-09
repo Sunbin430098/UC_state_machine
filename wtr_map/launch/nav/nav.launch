@@ -1,0 +1,17 @@
+<launch>
+    <include file="$(find wtr_map)/launch/car_gazebo.launch" />
+
+    <include file="$(find wtr_map)/launch/nav/gmapping.launch" />
+    
+    <!-- <include file="$(find wtr_map)/launch/nav/map_server.launch" /> -->
+
+    <!-- <include file="$(find wtr_map)/launch/nav/move_base.launch" /> -->
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find wtr_map)/config/wtr_map.rviz"/>
+
+    <!-- 关节以及机器人状态发布节点 -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+
+</launch>
