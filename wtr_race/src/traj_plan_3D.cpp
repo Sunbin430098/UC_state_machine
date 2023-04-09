@@ -794,7 +794,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
                 rate.sleep();
             }
-            for(int popTemp = 0;popTemp<2;popTemp++)
+            for(int popTemp = 0;popTemp<wPs.size();popTemp++)
             {
                 std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
                 wPs.erase(k);//删除第一个元素

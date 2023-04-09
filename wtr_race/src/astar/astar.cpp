@@ -21,8 +21,8 @@ namespace Astar_planner
       ros::NodeHandle private_nh;
       _plan_pub = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
       //珊格地图原点对应在物理坐标系下的位置
-      originX = map_->info.origin.position.x+6;
-      originY = map_->info.origin.position.y+6;
+      originX = map_->info.origin.position.x;
+      originY = map_->info.origin.position.y;
       width = map_->info.width;
       height = map_->info.height;
       resolution = map_->info.resolution;
@@ -46,6 +46,17 @@ namespace Astar_planner
             MCI[ix + iy * width] = false;//代价不为0存0
         }
       }
+      // for (unsigned int ix = 0; ix < width; ix++)
+      // {
+      //   for (unsigned int iy = 0; iy < height; iy++)
+      //   {
+      //     unsigned int cost = getCost(ix, iy, map_);
+      //     if (cost == 0)
+      //       MCI[iy + ix * width] = true;//代价为0存1
+      //     else
+      //       MCI[iy + ix * width] = false;//代价不为0存0
+      //   }
+      // }
       ROS_INFO("BAstar 全局规划器初始化成功！");
       initialized_ = true;
     }
@@ -53,8 +64,6 @@ namespace Astar_planner
       ROS_WARN("This planner has already been initialized... doing nothing");
   }
 
-  // bool AstarPlannerROS::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal,
-  //                                 std::vector<geometry_msgs::PoseStamped> &plan)
   std::vector<Eigen::Vector3d> AstarPlannerROS::makePlan(const vector<double> start_pos,const vector<double> target_pos)
   {
     std::vector<Eigen::Vector3d> wPs;
@@ -153,7 +162,7 @@ namespace Astar_planner
           {
             tempContain_[0] = pose.pose.position.x;
             tempContain_[1] = pose.pose.position.y;
-            tempContain_[0] = pose.pose.position.z;
+            tempContain_[2] = pose.pose.position.z;
             wPs.emplace_back(tempContain_[0],tempContain_[1],tempContain_[2]);
           }
         }
