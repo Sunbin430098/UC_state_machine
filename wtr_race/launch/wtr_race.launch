@@ -12,8 +12,4 @@
     <!-- 加载手柄 -->
     <include file="$(find wtr_race)/launch/wtr_joy.launch" />
 
-    <!--加载比赛车 -->
-    <!-- <include file="$(find assembly2)/launch/display.launch" />      
-    <include file="$(find assembly2)/launch/gazebo.launch" /> -->
-
 </launch>
