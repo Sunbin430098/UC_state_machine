@@ -130,6 +130,8 @@ namespace Astar_planner {
       int value;//记录寻路的次数
       int mapSize;//珊格地图大小，也就是珊格个数
       bool *MCI;
+      int point_pace;
+      int expand_factor;
 
       nav_msgs::OccupancyGrid grid_map;
   };

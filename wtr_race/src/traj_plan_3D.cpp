@@ -422,6 +422,7 @@ TrajPlan_3D::TrajPlan_3D()
 void TrajPlan_3D::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg)
 {
     initialize(map_msg);
+    // ROS_INFO("back");
 }
 
 void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)

@@ -11,6 +11,10 @@ namespace Astar_planner
 
   void AstarPlannerROS::initialize(const nav_msgs::OccupancyGrid::ConstPtr &map_)
   {
+    ros::NodeHandle a_nh_;
+    a_nh_.getParam("/traj_plan_3D/point_pace",point_pace);
+    a_nh_.getParam("/traj_plan_3D/expand_factor",expand_factor);
+    expand_factor = expand_factor*5;
     setlocale(LC_ALL,"");
     initialized_ = false;
 
@@ -18,8 +22,7 @@ namespace Astar_planner
     {
       //获取地图数据
       _frame_id = map_->header.frame_id;
-      ros::NodeHandle private_nh;
-      _plan_pub = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
+      _plan_pub = a_nh_.advertise<nav_msgs::Path>("global_plan", 1);
       //珊格地图原点对应在物理坐标系下的位置
       originX = map_->info.origin.position.x;
       originY = map_->info.origin.position.y;
@@ -42,21 +45,22 @@ namespace Astar_planner
           unsigned int cost = getCost(ix, iy, map_);
           if (cost == 0)
             MCI[ix + iy * width] = true;//代价为0存1
-          else
-            MCI[ix + iy * width] = false;//代价不为0存0
+          else if(cost == 1 && (ix>expand_factor-1) && ix<(width-expand_factor) && (iy>expand_factor-1)&&iy<(height-expand_factor))
+          {
+            int temp_a=-1*expand_factor;
+            for(temp_a;temp_a<(expand_factor+1);temp_a++)
+            {
+              int temp_b=-1*expand_factor;
+              for(temp_b;temp_b<(expand_factor+1);temp_b++)
+              {
+                // ROS_INFO("a=%d,b=%d,ix=%d,iy=%d,number=%d",temp_a,temp_b,ix,iy,(ix+temp_a) + (iy+temp_b) * width);
+                MCI[(ix+temp_a) + (iy+temp_b) * width] = false;//代价不为0存0（有障碍物）
+              }
+            }
+          }
+          else{MCI[ix + iy * width] = false;}
         }
       }
-      // for (unsigned int ix = 0; ix < width; ix++)
-      // {
-      //   for (unsigned int iy = 0; iy < height; iy++)
-      //   {
-      //     unsigned int cost = getCost(ix, iy, map_);
-      //     if (cost == 0)
-      //       MCI[iy + ix * width] = true;//代价为0存1
-      //     else
-      //       MCI[iy + ix * width] = false;//代价不为0存0
-      //   }
-      // }
       ROS_INFO("BAstar 全局规划器初始化成功！");
       initialized_ = true;
     }
@@ -158,7 +162,7 @@ namespace Astar_planner
           pose.pose.orientation.w = 1.0;
           plan.push_back(pose);//得到格式符合ROS的最终物理坐标路径
 
-          if(i%5==0)
+          if(i%point_pace==0||i==(bestPath.size()-1))
           {
             tempContain_[0] = pose.pose.position.x;
             tempContain_[1] = pose.pose.position.y;
@@ -545,7 +549,7 @@ int  AstarPlannerROS::getCost(int x, int y,const nav_msgs::OccupancyGrid::ConstP
 
     if((map_->data[position])==100)          //有障碍物
     {
-      ROS_INFO("Position = %d",position);
+      // ROS_INFO("Position = %d",position);
       return 1;
     }
     else{return 0;}
