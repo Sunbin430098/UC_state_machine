@@ -18,6 +18,8 @@
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/PointStamped.h"
 
+#include "astar/astar.h"
+
 std_msgs::Float32 msg;
 
 using namespace Eigen;
@@ -277,13 +279,14 @@ public:
     }
 };
 
-class TrajPlan_3D
+class TrajPlan_3D : public Astar_planner::AstarPlannerROS
 {
     public:
         TrajPlan_3D();
         void pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg);
         void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
         void odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
+        void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg);
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
@@ -326,19 +329,16 @@ class TrajPlan_3D
         tf::TransformBroadcaster odom_world_broadcaster; 
         tf2_ros::Buffer buffer; 
 
-        ros::Publisher pub1;
-        ros::Publisher pub2;
-        ros::Publisher pub3;
+        //grid_map---------
+        ros::Subscriber map_sub;
+
 };
 
 TrajPlan_3D::TrajPlan_3D()
 {
-    // pub1 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
-    // pub2 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
-    // pub3 = nh_.advertise<nav_traj_plan::joint>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
-    pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
-    pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
-    pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+    // pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
+    // pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
+    // pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
     msg.data = 60;
 
     point_count = 1;
@@ -347,6 +347,7 @@ TrajPlan_3D::TrajPlan_3D()
     sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
     joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
     odom_sub = nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::odomCallback,this);
+    map_sub = nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
     //process1-----------------param--------------------
     nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
 
@@ -416,7 +417,12 @@ TrajPlan_3D::TrajPlan_3D()
     nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
     nh_.param("hang_Button", hang_Button_, hang_Button_);
     protectFlag=true;
+}
 
+void TrajPlan_3D::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg)
+{
+    initialize(map_msg);
+    // ROS_INFO("back");
 }
 
 void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
@@ -432,7 +438,6 @@ void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
     // x += delta_x;
     // y += delta_y;
     // th += delta_th;
-
     // geometry_msgs::Quaternion odom_link_quat = tf::createQuaternionMsgFromYaw(th);
     // geometry_msgs::TransformStamped odom_link_trans;
     // odom_link_trans.header.stamp = current_time;
@@ -443,7 +448,6 @@ void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
     // odom_link_trans.transform.translation.z = 0.0;
     // odom_link_trans.transform.rotation = odom_link_quat;
     // odom_link_broadcaster.sendTransform(odom_link_trans);
-
     geometry_msgs::TransformStamped odom_world_trans;
     odom_world_trans.header.stamp = current_time;
     odom_world_trans.header.frame_id = "world";
@@ -453,7 +457,6 @@ void TrajPlan_3D::odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
     odom_world_trans.transform.translation.z = 0;
     odom_world_trans.transform.rotation = odom->pose.pose.orientation;
     odom_world_broadcaster.sendTransform(odom_world_trans);
-
     // tf2_ros::TransformListener listener(TrajPlan_3D::buffer);  
     // geometry_msgs::TransformStamped tfs = buffer.lookupTransform("world","wtr_robot_odom",ros::Time(0));
 
@@ -752,16 +755,17 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
         if((TargetZone_[0] == StartZone_[0])&&(TargetZone_[1] == StartZone_[1]))
         {
-            protectFlag==false;
+            protectFlag=false;
         }
         else{
-            protectFlag==true;
+            protectFlag=true;
         }
         std::cout<<"Start point x = "<<StartZone_[0]<<"y = "<<StartZone_[1]<<"z = "<<StartZone_[2]<<std::endl;
         std::cout<<"Final target x = "<<TargetZone_[0]<<"y = "<<TargetZone_[1]<<"z = "<<TargetZone_[2]<<std::endl;
         if(protectFlag==true)
         {
             wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
+            wPs = makePlan(StartZone_,TargetZone_);
             traj = amTrajOpt.genOptimalTrajDTC(wPs, iV, iA, fV, fA);
             ROS_INFO("Draw trail start");
             ros::Time begin = ros::Time::now();
@@ -791,7 +795,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
                 rate.sleep();
             }
-            for(int popTemp = 0;popTemp<2;popTemp++)
+            for(int popTemp = 0;popTemp<wPs.size();popTemp++)
             {
                 std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
                 wPs.erase(k);//删除第一个元素
@@ -799,6 +803,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             StartZone_[0] = TargetZone_[0];
             StartZone_[1] = TargetZone_[1];
             StartZone_[2] = TargetZone_[2];
+            protectFlag=true;
         }
         else{
             ROS_WARN("You can not set the same TargetZone !");

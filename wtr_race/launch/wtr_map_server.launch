@@ -5,4 +5,5 @@
     <node name="map_server" pkg="map_server" type="map_server" args="$(find wtr_race)/map/$(arg map)"/>
     
     <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 map world   40" />
+    
 </launch>
