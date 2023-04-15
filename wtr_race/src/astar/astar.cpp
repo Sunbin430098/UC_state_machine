@@ -20,6 +20,7 @@ namespace Astar_planner
 
     if (!initialized_)
     {
+      marker_pub = a_nh_.advertise<visualization_msgs::MarkerArray>("/wtr/expand_point", 10);
       //获取地图数据
       _frame_id = map_->header.frame_id;
       _plan_pub = a_nh_.advertise<nav_msgs::Path>("global_plan", 1);
@@ -70,6 +71,9 @@ namespace Astar_planner
 
   std::vector<Eigen::Vector3d> AstarPlannerROS::makePlan(const vector<double> start_pos,const vector<double> target_pos)
   {
+    //设置膨胀地图标记
+    marker_number = 0;
+
     std::vector<Eigen::Vector3d> wPs;
     if (!initialized_)//判断规划器是否初始化
     {
@@ -169,6 +173,22 @@ namespace Astar_planner
             tempContain_[2] = pose.pose.position.z;
             wPs.emplace_back(tempContain_[0],tempContain_[1],tempContain_[2]);
           }
+        
+          for (int ix_ = 0; ix_ < expand_factor; ix_++)
+          {
+            for (int iy_ = 0; iy_ < expand_factor; iy_++)
+            {
+              float pixel_pos_x = (ix_*resolution+pose.pose.position.x-originX)/resolution;
+              float pixel_pos_y = (iy_*resolution+pose.pose.position.y-originY)/resolution;
+              ROS_INFO("pixel_pos_x=%f,pixel_pos_y=%f\n",pixel_pos_x,pixel_pos_y);
+              if(MCI[(int)(pixel_pos_x + pixel_pos_y*width)]==false)
+              {
+                marker_number++;
+                addMarker((ix_*resolution+pose.pose.position.x),(iy_*resolution+pose.pose.position.y));
+              }
+              else{continue;}
+            }
+          }
         }
 
         double path_length = 0.0;//记录路径长度
@@ -199,6 +219,8 @@ namespace Astar_planner
         }
 
         _plan_pub.publish(path);//进行路径发布
+        marker_pub.publish(expand_marker_array_);
+        expand_marker_array_.markers.clear();
         // return true;
         // return ;
       }
@@ -543,16 +565,48 @@ namespace Astar_planner
   }
 
 //二值化的图像0是黑,1是白
-int  AstarPlannerROS::getCost(int x, int y,const nav_msgs::OccupancyGrid::ConstPtr &map_)
-  {
-    int position = {map_->info.width*y+x};
-
-    if((map_->data[position])==100)          //有障碍物
+  int  AstarPlannerROS::getCost(int x, int y,const nav_msgs::OccupancyGrid::ConstPtr &map_)
     {
-      // ROS_INFO("Position = %d",position);
-      return 1;
+      int position = {map_->info.width*y+x};
+
+      if((map_->data[position])==100)          //有障碍物
+      {
+        // ROS_INFO("Position = %d",position);
+        return 1;
+      }
+      else{return 0;}
     }
-    else{return 0;}
+    
+  void AstarPlannerROS::addMarker(float x, float y)
+  {
+      std::stringstream ss;
+      ss<< "expand__"<<marker_number;
+      visualization_msgs::Marker  expand_marker_msg_;
+      expand_marker_msg_.header.frame_id = "world";
+      expand_marker_msg_.header.stamp = ros::Time::now();
+      // expand_marker_msg_.ns = ss.str() ;
+      expand_marker_msg_.ns = "expand";
+      expand_marker_msg_.id = marker_number ;
+      expand_marker_msg_.type = visualization_msgs::Marker::CUBE;
+      expand_marker_msg_.action = visualization_msgs::Marker::ADD;
+      expand_marker_msg_.pose.orientation.x = 0.0;
+      expand_marker_msg_.pose.orientation.y = 0.0;
+      expand_marker_msg_.pose.orientation.z = 0.0;
+      expand_marker_msg_.pose.orientation.w = 1.0;
+      expand_marker_msg_.scale.x = resolution;
+      expand_marker_msg_.scale.y = resolution;
+      expand_marker_msg_.scale.z = resolution;
+      expand_marker_msg_.color.r = 1.0;
+      expand_marker_msg_.color.g = 0.0;
+      expand_marker_msg_.color.b = 0.0;
+      expand_marker_msg_.color.a = 1.0;
+      expand_marker_msg_.lifetime = ros::Duration(5);
+      expand_marker_msg_.pose.position.x = x;
+      expand_marker_msg_.pose.position.y = y;
+      expand_marker_msg_.pose.position.z = 0.0 ;
+      expand_marker_array_.markers.push_back(expand_marker_msg_);
   }
 };
+
+
 

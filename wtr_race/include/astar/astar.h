@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
 using namespace std;
 
 /* 包含需要的库文件 */
@@ -18,6 +19,11 @@ using namespace std;
 #include <vector>
 #include <Eigen/Eigen>
 #include <nav_msgs/OccupancyGrid.h>
+
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#define marker_length 50
 
 //  cells 表示一个珊格的结构体，包含 当前珊格索引值 和 当前珊格到目标珊格的总距离代价f值
 struct cells {
@@ -65,6 +71,7 @@ namespace Astar_planner {
         参数2：指向用于规划的代价地图的 ROS 包装器的指针
       */
       int getCost(int x, int y,const nav_msgs::OccupancyGrid::ConstPtr &map_);
+      void addMarker(float x, float y);
 
       void initialize(const nav_msgs::OccupancyGrid::ConstPtr &map_);
       /*  
@@ -117,7 +124,9 @@ namespace Astar_planner {
 
 
     private:
-      // costmap_2d::Costmap2D* costmap_;
+      ros::Publisher marker_pub; //标记膨胀地图
+      // visualization_msgs::Marker expand_marker_[marker_length];
+      visualization_msgs::MarkerArray expand_marker_array_;
 
       std::string _frame_id;
       ros::Publisher _plan_pub;
@@ -132,6 +141,7 @@ namespace Astar_planner {
       bool *MCI;
       int point_pace;
       int expand_factor;
+      int marker_number;
 
       nav_msgs::OccupancyGrid grid_map;
   };

@@ -56,6 +56,7 @@ add_library(Astar_planner_lib
 
 
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
+add_executable(test src/test.cpp)
 
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -69,6 +70,9 @@ target_link_libraries(Astar_planner_lib
 )
 target_link_libraries(traj_plan_3D
   Astar_planner_lib
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(test
   ${catkin_LIBRARIES}
 )
 

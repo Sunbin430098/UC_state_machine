@@ -6,4 +6,6 @@
     
     <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 map world   40" />
     
+    <!-- <node pkg="wtr_race" type="test" name="test"/> 
+     <node name="rviz" pkg="rviz" type="rviz" output="screen"/> -->
 </launch>
