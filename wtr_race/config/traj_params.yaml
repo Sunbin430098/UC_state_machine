@@ -22,7 +22,8 @@ Iterations:                  23
 
 Epsilon:                     0.02
 
-##process1
+
+#process1
 # Number of Points 
 PointNumber:                   3
 
@@ -30,7 +31,7 @@ PointNumber:                   3
 #Different Number of Points in every part .cpp文件中maxPointParts设置20,最多区间小于20即可
 PointArray:                   [3,3,4,4]
 #Maximum segment  此值小于等于PointArray元素个数即可
-MaxParts:                       3
+MaxParts:                       4
 
 #process3
 #The point coordinates to be passed in
@@ -73,5 +74,5 @@ FireZoneA:                     [1.5,5.5,0]
 FireZoneB:                     [5.0,-5.5,0]
 FireZoneC:                     [1.5,2,0]
 StartZone:                     [1,0,0]
-expand_factor:                      2      #一倍膨胀对应5个像素
+expand_factor:                      2     #一倍膨胀对应5个像素
 point_pace:                         20    

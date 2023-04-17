@@ -180,8 +180,8 @@ namespace Astar_planner
             {
               float pixel_pos_x = (ix_*resolution+pose.pose.position.x-originX)/resolution;
               float pixel_pos_y = (iy_*resolution+pose.pose.position.y-originY)/resolution;
-              ROS_INFO("pixel_pos_x=%f,pixel_pos_y=%f\n",pixel_pos_x,pixel_pos_y);
-              if(MCI[(int)(pixel_pos_x + pixel_pos_y*width)]==false)
+              // ROS_INFO("pixel_pos_x=%f,pixel_pos_y=%f\n",pixel_pos_x,pixel_pos_y);
+              if(MCI[(int)(pixel_pos_x + pixel_pos_y*width)+1]==false||MCI[(int)(pixel_pos_x + pixel_pos_y*width)]==false)
               {
                 marker_number++;
                 addMarker((ix_*resolution+pose.pose.position.x),(iy_*resolution+pose.pose.position.y));

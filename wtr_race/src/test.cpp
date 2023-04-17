@@ -4,6 +4,7 @@
 
 int main( int argc, char** argv )
 {
+     
   // Initialize the ROS node
   ros::init(argc, argv, "marker_array_example");
   ros::NodeHandle n;
@@ -17,7 +18,10 @@ int main( int argc, char** argv )
   // Create a Marker message for a cube
   visualization_msgs::Marker marker_cube[2];
   
-
+ ros::param::set("fastlio_mapping/livox_odom_x",1);
+    ros::param::set("fastlio_mapping/livox_odom_y",1);
+    ros::param::set("fastlio_mapping/livox_odom_z",1);
+    ros::param::set("fastlio_mapping/livox_odom_w",1);
   // Add the cube marker to the array
     for(int i=0;i<2;i++)
     {

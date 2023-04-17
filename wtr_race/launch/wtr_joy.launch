@@ -5,14 +5,10 @@
     <param name="dev" type="string" value="/dev/input/js0" />
     <param name="deadzone" value="0.12" />
   </node>
-  <!-- Buttons stop是A start是B-->
-  <!-- <param name="stop" value="0" type="int"/>   
-  <param name="start" value="1" type="int"/> -->
+
   <param name="A_Zone_Button" value="0" type="int"/>   
   <param name="B_Zone_Button" value="1" type="int"/>
   <param name="C_Zone_Button" value="2" type="int"/>
-  <param name="hang_Button" value="3" type="int"/>
-
-
+  <param name="hang_Button" value="3" type="int"/> 
 
 </launch>
