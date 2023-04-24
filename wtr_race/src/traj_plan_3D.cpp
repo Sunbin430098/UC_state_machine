@@ -52,6 +52,16 @@ vector<double> TargetZone_(3);
 vector <double>  LivoxZone_(3);
 float livox_odom_w;
 
+//auto_decision---------------
+vector<double> HitRateArray(11);
+vector<int> HitPointArray(11);
+//柱子最上面的圆环颜色0表示没有，1表示红,2表示蓝，需要从视觉模块通过动态参数传过来
+vector<int> OverallSituation(11);
+bool decisionFlag;  //是否进行决策
+int OwnScore;   
+int OpponentScore;  //先考虑己方得分与对方得分，如果识别够准添加对方策略判断
+bool centralCondition; //中间大柱子情况
+
 typedef enum{
     StartZoneModel = 0 ,
     LivoxZoneModel ,
@@ -306,6 +316,7 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         void sim_odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg);
         void gogogo();
+        int auto_decision();
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
@@ -371,6 +382,10 @@ TrajPlan_3D::TrajPlan_3D()
     nh_.param("B_Zone_Button", B_Zone_Button_, B_Zone_Button_);
     nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
     nh_.param("hang_Button", hang_Button_, hang_Button_);
+
+    nh_.getParam("HitRate", HitRateArray);
+    nh_.getParam("HitPoint", HitPointArray);
+    nh_.getParam("OverallSituation",OverallSituation);
 
     switch (ProcessModel)
     {
@@ -739,6 +754,14 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             break;
         }
    
+}
+
+int TrajPlan_3D::auto_decision()
+{
+    if(decisionFlag)
+    {
+
+    }
 }
 
 int main(int argc,char **argv)
