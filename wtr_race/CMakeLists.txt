@@ -62,6 +62,7 @@ add_library(Astar_planner_lib
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
 add_executable(test src/test.cpp)
 add_executable(loop_dect  src/visual_dect/loop_dect.cpp)
+add_executable(base2camera  src/tf/base2camera.cpp)
 
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -85,6 +86,9 @@ target_link_libraries(loop_dect
   ${catkin_LIBRARIES}
   # ${OpenCV_LIBS}
   ${OpenCV_LIBRARIES}
+)
+target_link_libraries(base2camera
+  ${catkin_LIBRARIES}
 )
 
 catkin_install_python(PROGRAMS scripts/ros/video_tackle.py

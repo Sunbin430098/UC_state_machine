@@ -8,8 +8,8 @@
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find wtr_race)/config/traj.rviz" />
 
     <!-- 加载二维slam地图 -->
-    <include file="$(find wtr_race)/launch/wtr_map_server.launch"/>
+    <include file="$(find wtr_race)/launch/map/wtr_map_server.launch"/>
     <!-- 加载手柄 -->
-    <include file="$(find wtr_race)/launch/wtr_joy.launch" />
+    <include file="$(find wtr_race)/launch/joy/wtr_joy.launch" />
 
 </launch>
