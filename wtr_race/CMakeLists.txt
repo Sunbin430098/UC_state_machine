@@ -8,6 +8,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC")
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED)
+# find_package(Flann REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -26,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   sensor_msgs
+  pcl_ros
 )
 
 include_directories(
@@ -35,6 +38,8 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    # ${FLANN_INCLUDE_DIRS}
     ../include
 )
 
@@ -63,6 +68,7 @@ add_executable(traj_plan_3D src/traj_plan_3D.cpp)
 add_executable(test src/test.cpp)
 add_executable(loop_dect  src/visual_dect/loop_dect.cpp)
 add_executable(base2camera  src/tf/base2camera.cpp)
+add_executable(pointcloud  src/pointcloud/pointcloud.cpp)
 
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -71,6 +77,7 @@ add_dependencies(loop_dect ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 
 link_directories(
   ${catkin_LIB_DIRS}
+  ${PCL_LIBRARY_DIRS}
 )
 target_link_libraries(Astar_planner_lib
   ${catkin_LIBRARIES}
@@ -89,6 +96,11 @@ target_link_libraries(loop_dect
 )
 target_link_libraries(base2camera
   ${catkin_LIBRARIES}
+)
+target_link_libraries(pointcloud
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  # ${FLANN_LIBRARIES}
 )
 
 catkin_install_python(PROGRAMS scripts/ros/video_tackle.py
