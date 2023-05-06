@@ -106,13 +106,18 @@
 #include <pcl/octree/octree.h>
 #include <Eigen/Geometry>
 #include <pcl/common/transforms.h>
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
+=======
+#include <pcl_ros/transforms.h>
+#include <tf/transform_listener.h>
+
+>>>>>>> 视觉模块调整完成，需要最后接受雷达扫到的套上的环的坐标，并通过识别判断环的颜色
 // 定义点云类型
 typedef pcl::PointXYZ PointT;
 
 // 定义Octree数据结构
 pcl::octree::OctreePointCloudSearch<PointT> octree(1.0);
 
-// 订阅回调函数
 void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 {
     std::cout<<"hi"<<std::endl;
@@ -150,16 +155,12 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
 int main(int argc, char** argv)
 {
-    // 初始化ROS节点
     ros::init(argc, argv, "pointcloud_node");
     ros::NodeHandle nh;
 
-    // 订阅点云话题
     ros::Subscriber sub = nh.subscribe<sensor_msgs::PointCloud2>("/t3_cloud", 1, cloudCallback);
 
-    // 循环等待回调函数
     ros::spin();
-
     return 0;
 }
 

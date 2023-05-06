@@ -22,7 +22,11 @@ class LoopDect:
         self.image_pub = rospy.Publisher("cv_bridge_image", Image, queue_size=1)
         self.bridge = CvBridge()
         # 内置摄像头
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
         # self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.callback)
+=======
+        # self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.camera_callback)
+>>>>>>> 视觉模块调整完成，需要最后接受雷达扫到的套上的环的坐标，并通过识别判断环的颜色
         #　深度摄像头
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.camera_callback)
         self.kernel = np.ones((3, 3), np.uint8) 
@@ -71,19 +75,25 @@ class LoopDect:
             return diameter
 
     def get_exteral_matrix(self):
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
         # 监听相机坐标系与世界坐标系之间的变换关系
         self.listener.waitForTransform('world', 'camera', rospy.Time(), rospy.Duration(4.0))
         # 获取相机在世界坐标系下的位姿
         (trans, rot) = self.listener.lookupTransform('world', 'camera', rospy.Time())
+=======
+        self.listener.waitForTransform('world', 'camera_rgb_frame', rospy.Time(), rospy.Duration(4.0))
+        (trans, rot) = self.listener.lookupTransform('world', 'camera_rgb_frame', rospy.Time())
+>>>>>>> 视觉模块调整完成，需要最后接受雷达扫到的套上的环的坐标，并通过识别判断环的颜色
         R = tf_trans.quaternion_matrix(rot)[:3, :3]
-        # 将位姿转换为旋转矩阵和平移向量
         t = np.array(trans)
-        # 组合成外参矩阵
         ext_mat = np.hstack((np.array(R), t.reshape(3, 1)))
         return ext_mat
 
     def coordinate_transform(self,arg1):
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
         # 相机内参矩阵
+=======
+>>>>>>> 视觉模块调整完成，需要最后接受雷达扫到的套上的环的坐标，并通过识别判断环的颜色
         fx = self.camera_inner_matrix[0]
         cx = self.camera_inner_matrix[2]
         fy = self.camera_inner_matrix[4]
@@ -91,7 +101,6 @@ class LoopDect:
         inner_matrix = np.array([[fx, 0, cx],
                                 [0, fy, cy],
                                 [0, 0, 1]])
-        # 相机畸变参数
         k1 = self.camera_dist_coefs[0]
         k2 = self.camera_dist_coefs[1]
         p1 = self.camera_dist_coefs[2]
@@ -99,6 +108,7 @@ class LoopDect:
         k3 = self.camera_dist_coefs[4]
         dist_coefs = np.array([k1, k2, p1, p2, k3])
 
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
         # # 相机外参矩阵，可以通过标定得到，也可以手动设置
         # R = np.array([[r11, r12, r13],
         #             [r21, r22, r23],
@@ -129,9 +139,42 @@ class LoopDect:
         # print(u)
         # print(v)
         # 在图像上绘制点
+=======
+        external_matrix = self.camera_exteral_matrix
+        print(external_matrix)
+        print(inner_matrix)
+
+        #世界转相机         #Astra相机的坐标系，坐标系原点位于相机光学中心：
+                            # X轴：指向图像右侧
+                            # Y轴：指向图像下方(yz改好了和世界逻辑相同)
+                            # Z轴：指向相机前方
+                            # x轴值应保持半米以上,视角不宽
+        world_point = np.array([[1.0], [0.445], [0.4], [1]])
+        camera_point = np.array(np.dot(external_matrix, world_point))
+        # print(camera_point) 
+        camera_point = camera_point/abs(camera_point[2])
+
+        # 相机转像素
+        pixel_point = np.array(np.dot(inner_matrix, camera_point) )
+        pixel_point = np.transpose(pixel_point[:2])
+        pixel_point[0][0] = 640-pixel_point[0][0]
+        pixel_point[0][1] = 480-pixel_point[0][1]
+        # print(pixel_point)
+
+        # # 畸变矫正
+        # pixel_point = cv2.undistortPoints(pixel_point, inner_matrix, dist_coefs,normalize = False)
+        # print(pixel_point)
+        # u, v = (pixel_point[0][0]) 
+        # u *= 640
+        # v *= 480
+
+        u, v = (pixel_point[0]) 
+        print(u)
+        print(v)
+>>>>>>> 视觉模块调整完成，需要最后接受雷达扫到的套上的环的坐标，并通过识别判断环的颜色
         cv2.circle(arg1, (int(u), int(v)), 50, (0, 0, 255), -1)
         self.image_pub.publish(self.bridge.cv2_to_imgmsg(arg1, "bgr8"))
-        # cv2.imshow("image", img)
+        
 
     def cleanup(self):
         rospy.loginfo("Shutting down vision node.")

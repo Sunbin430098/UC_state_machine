@@ -7,10 +7,10 @@
 
     <!-- 加载视觉主控 -->
     <node pkg="wtr_race" type="video_tackle.py" name="video_tackle" output="screen">
-        <rosparam file="$(find wtr_race)/config/camera.yaml" command="load" />
+        <rosparam file="$(find wtr_race)/config/ost.yaml" command="load" />
     </node>
 
-    <node pkg="wtr_race" type="base2camera" name="base2camera" output="screen"/>
+    <node pkg="wtr_race" type="base2camera.py" name="base2camera" output="screen"/>
     <!-- 加载rviz配置 -->
     <!-- <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find wtr_race)/config/traj.rviz" /> -->
 

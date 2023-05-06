@@ -1,12 +1,16 @@
 image_width: 640
 image_height: 480
 camera_name: narrow_stereo
-camera_matrix:      #内参
+camera_matrix:      #内参,单位是 像素/m
   rows: 3
   cols: 3
-  data: [732.60558,   0.     , 179.39814,
-           0.     , 702.61351, 231.89372,
-           0.     ,   0.     ,   1.     ] #相机坐标系转世界坐标系矩阵A，[x,y,c,1](world) = A * [x,y,z,1](camera)
+  # data: [732.60558,   0.     , 179.39814,
+  #          0.     , 702.61351, 231.89372,
+  #          0.     ,   0.     ,   1.     ] 
+  data: [732.60558,   0.     , 320,
+          0.     , 702.61351, 240,
+          0.     ,   0.     ,   1.     ] 
+           #相机坐标系转世界坐标系矩阵A，[x,y,c,1](world) = A * [x,y,z,1](camera)
 distortion_model: plumb_bob
 distortion_coefficients:  #径向畸变和切向畸变
   rows: 1
