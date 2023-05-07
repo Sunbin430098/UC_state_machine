@@ -1,6 +1,7 @@
 decay_map:
   # first for obstacle map, second for guide map
   resolutions: [ 0.1, 0.3 ]
+  # resolutions: [ 0.1, 0.8 ]
   inflation_steps: [1,1 ]
   odom: "/lidar_slam/odom"
   cloud: "/cloud_registered" #realworld

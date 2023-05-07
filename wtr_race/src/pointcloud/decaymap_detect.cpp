@@ -163,52 +163,51 @@
 //     });
 // }
 
-//目标：开雷达，扫，本来没有，放，有有有
 #include "livox_lidar/plan_env/decay_map.hpp"
-DecayMap::Ptr dcm_ptr;
-shared_ptr<DecayMapConfig> dcm_cfg_ptr;
 
 class LivoxDetect
 {
     public:
-        LivoxDetect();
+        LivoxDetect(ros::NodeHandle &n);
         void lidarCallback(const ros::TimerEvent&);
 
     private:
         ros::NodeHandle nh;
         ros::Timer timer;
+        DecayMap::Ptr dcm_ptr;
+        shared_ptr<DecayMapConfig> dcm_cfg_ptr;
 };
 
-LivoxDetect::LivoxDetect():nh("~")
+LivoxDetect::LivoxDetect(ros::NodeHandle &n)
 {
+    nh = n;
     timer = nh.createTimer(ros::Duration(0.5), &LivoxDetect::lidarCallback,this);
     dcm_cfg_ptr.reset(new DecayMapConfig(nh));
     dcm_ptr.reset(new DecayMap(nh, *dcm_cfg_ptr));
+
 }
 
 void LivoxDetect::lidarCallback(const ros::TimerEvent&)
 {
-    Vec3 a(20,20,1);//此处与map_origin做差为实际点
-    bool t = dcm_ptr->isOccupied(a);
-    std::cout<<"t = "<<t<<std::endl;
+    // Vec3 a(20,20,1);
+    // Vec3 a(-0.4,-0.4,0.15);
+    // bool t = dcm_ptr->isOccupied(a);
+    // std::cout<<"t = "<<t<<std::endl;
+    Eigen::Vector3d maxbox_size(8,8,2);
+    Eigen::Vector3d minbox_size(-8,-8,0);
+    vector<Eigen::Vector3d>  points;
 
-    // Eigen::Vector3d minbox_size(0,0,0);
-    // Eigen::Vector3d maxbox_size(1,1,1);
-    // Eigen::Vector3d b(0,0,0);
-    // Eigen::Vector3d c(-1,0,1);
-    // vector<Eigen::Vector3d>  points;
-    // points.push_back(b);
-    // points.push_back(c);
-    // dcm_ptr->boxSearch(minbox_size,maxbox_size,points);
-    // for (const auto& point : points) {
-    // std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;
-    // }
-    ROS_INFO("Timer callback triggered");
+    dcm_ptr->boxSearchInflate(maxbox_size,minbox_size,points);
+    // for (const auto& point : points) 
+    // { std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;}
+    ROS_INFO("%d",points.size());
+    // ROS_INFO("Timer callback triggered");
 }
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "decay_map");
-    LivoxDetect livixdetect; 
+    ros::NodeHandle nh("~");
+    LivoxDetect livixdetect(nh); 
     // ros::AsyncSpinner spinner(0);
     // spinner.start();
     // ros::waitForShutdown();
