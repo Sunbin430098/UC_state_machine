@@ -3,8 +3,6 @@
     <!-- 加载深度摄像头 -->
     <include file="$(find astra_camera)/launch/astra.launch"/>
 
-    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="world_broadcaster" args="0 0 2 0 0 0 world camera 100" /> -->
-
     <!-- 加载视觉主控 -->
     <node pkg="wtr_race" type="video_tackle.py" name="video_tackle" output="screen">
         <rosparam file="$(find wtr_race)/config/ost.yaml" command="load" />

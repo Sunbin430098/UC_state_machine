@@ -29,7 +29,6 @@ int main(int argc, char **argv) {
     std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;
 }
 
-    /* Publisher and subcriber */
     ros::AsyncSpinner spinner(0);
     spinner.start();
     ros::Duration(1.0).sleep();
