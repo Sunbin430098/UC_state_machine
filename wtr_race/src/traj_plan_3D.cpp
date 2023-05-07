@@ -316,7 +316,7 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         void sim_odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg);
         void gogogo();
-        int auto_decision();
+        void auto_decision();
     private:
         ros::NodeHandle nh_ ;
         ros::Subscriber point_sub;
@@ -756,7 +756,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
    
 }
 
-int TrajPlan_3D::auto_decision()
+void TrajPlan_3D::auto_decision()
 {
     if(decisionFlag)
     {

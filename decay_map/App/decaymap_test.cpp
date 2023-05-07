@@ -1,3 +1,4 @@
+//目标：开雷达，扫，本来没有，放，有有有
 #include "plan_env/decay_map.hpp"
 
 DecayMap::Ptr dcm_ptr;
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
 
     dcm_ptr.reset(new DecayMap(nh, *dcm_cfg_ptr));
 
-    Vec3 a(1,1,1);
+    Vec3 a(0,0,2);
     bool t = dcm_ptr->isOccupied(a);
     std::cout<<"t = "<<t<<std::endl;
 

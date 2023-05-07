@@ -2,14 +2,22 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(wtr_race)
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+# set(CMAKE_CXX_FLAGS "-std=c++11")
+# set(CMAKE_BUILD_TYPE "Release")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC")
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g -fPIC")
+add_compile_options(-DQT_NO_VERSION_TAGGING)
+add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
-# find_package(Flann REQUIRED)
+
+find_package(PythonLibs REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(fmt)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -29,19 +37,35 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   sensor_msgs
   pcl_ros
+  message_filters
 )
 
 include_directories(
+  SYSTEM
   include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/wtr_race/
     ${CMAKE_CURRENT_SOURCE_DIR}/include/astar/
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/livox_lidar/
     ${catkin_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}    mr_planner_lib
     ${OpenCV_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
-    # ${FLANN_INCLUDE_DIRS}
     ../include
+    
+    
+    ../../../devel/include
+    /usr/include/x86_64-linux-gnu/qt5
+    /usr/include/x86_64-linux-gnu/qt5/QtGui
+    /usr/include/x86_64-linux-gnu/qt5/QtCore
+    ${PYTHON_INCLUDE_DIRS}
 )
+
+set(THIRD_PARTY
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    fmt::fmt
+    )
 
 add_message_files(
   FILES
@@ -65,10 +89,13 @@ add_library(Astar_planner_lib
 
 
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
-add_executable(test src/test.cpp)
 add_executable(loop_dect  src/visual_dect/loop_dect.cpp)
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
 add_executable(base2camera  src/tf/base2camera.cpp)
 add_executable(pointcloud  src/pointcloud/pointcloud.cpp)
+=======
+add_executable(decaymap_detect  src/pointcloud/decaymap_detect.cpp)
+>>>>>>> keep
 
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -86,21 +113,22 @@ target_link_libraries(traj_plan_3D
   Astar_planner_lib
   ${catkin_LIBRARIES}
 )
-target_link_libraries(test
-  ${catkin_LIBRARIES}
-)
 target_link_libraries(loop_dect
   ${catkin_LIBRARIES}
   # ${OpenCV_LIBS}
   ${OpenCV_LIBRARIES}
 )
+<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
 target_link_libraries(base2camera
   ${catkin_LIBRARIES}
 )
 target_link_libraries(pointcloud
+=======
+target_link_libraries(decaymap_detect
+>>>>>>> keep
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  # ${FLANN_LIBRARIES}
+  ${THIRD_PARTY}
 )
 
 catkin_install_python(PROGRAMS scripts/ros/video_tackle.py
