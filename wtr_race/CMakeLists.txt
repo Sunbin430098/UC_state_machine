@@ -90,12 +90,7 @@ add_library(Astar_planner_lib
 
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
 add_executable(loop_dect  src/visual_dect/loop_dect.cpp)
-<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
-add_executable(base2camera  src/tf/base2camera.cpp)
-add_executable(pointcloud  src/pointcloud/pointcloud.cpp)
-=======
 add_executable(decaymap_detect  src/pointcloud/decaymap_detect.cpp)
->>>>>>> keep
 
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -118,14 +113,7 @@ target_link_libraries(loop_dect
   # ${OpenCV_LIBS}
   ${OpenCV_LIBRARIES}
 )
-<<<<<<< b7f1d2d145e76c5f1e67a41dc9626a5adc59406f
-target_link_libraries(base2camera
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(pointcloud
-=======
 target_link_libraries(decaymap_detect
->>>>>>> keep
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${THIRD_PARTY}
