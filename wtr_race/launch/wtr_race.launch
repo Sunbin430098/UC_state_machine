@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
     <!-- 加载轨迹规划主控 -->
-    <!-- <node pkg="wtr_race" type="traj_plan_3D" name="traj_plan_3D" output="screen">
+    <node pkg="wtr_race" type="traj_plan_3D" name="traj_plan_3D" output="screen">
         <rosparam file="$(find wtr_race)/config/traj_params.yaml" command="load" />
-    </node> -->
+    </node>
     <!-- 加载rviz配置 -->
-    <!-- <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find wtr_race)/config/traj.rviz" /> -->
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find wtr_race)/config/traj.rviz" />
 
     <!-- 加载二维slam地图 -->
-    <!-- <include file="$(find wtr_race)/launch/map/wtr_map_server.launch"/> -->
+    <include file="$(find wtr_race)/launch/map/wtr_map_server.launch"/>
     <!-- 加载手柄 -->
-    <!-- <include file="$(find wtr_race)/launch/joy/wtr_joy.launch" /> -->
+    <include file="$(find wtr_race)/launch/joy/wtr_joy.launch" />
 
-    <include file="$(find map_simulator)/launch/my_map.launch"/>
+    <!-- <include file="$(find map_simulator)/launch/my_map.launch"/> -->
     
-    <node pkg="wtr_race" type="pointcloud" name="pointcloud" output="screen"/>
+    <include file="$(find wtr_race)/launch/lidar/decay_map.launch"/>
+
 </launch>

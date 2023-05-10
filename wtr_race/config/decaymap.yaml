@@ -21,3 +21,8 @@ decay_map:
   odom_timeout: 20000.0
   frame_id: "world"
 
+  OverallSituation:             [0,0,0,
+                        0,0,0,
+                        0,0,0,0,
+                        0]
+

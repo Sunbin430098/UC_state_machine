@@ -87,6 +87,18 @@ add_library(Astar_planner_lib
   src/astar/astar.cpp
 )
 
+add_library(Decaymap_detect_lib
+  include/livox_lidar/livox_lidar.h
+  include/livox_lidar/plan_env/astar.hpp
+  include/livox_lidar/plan_env/config.hpp
+  include/livox_lidar/plan_env/decay_map.hpp
+  include/livox_lidar/plan_env/raycast.hpp
+  include/livox_lidar/utils/common_type_name.hpp
+  include/livox_lidar/utils/scope_timer.hpp
+  include/livox_lidar/utils/visualization_utils.hpp
+  src/pointcloud/decaymap_detect.cpp
+)
+
 
 add_executable(traj_plan_3D src/traj_plan_3D.cpp)
 add_executable(loop_dect  src/visual_dect/loop_dect.cpp)
@@ -95,7 +107,9 @@ add_executable(decaymap_detect  src/pointcloud/decaymap_detect.cpp)
 # add_dependencies(traj_plan_3D ${PROJECT_NAME}_generate_messages_cpp)
 add_dependencies(traj_plan_3D ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(Astar_planner_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(Decaymap_detect_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(loop_dect ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(decaymap_detect ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 link_directories(
   ${catkin_LIB_DIRS}
@@ -104,8 +118,14 @@ link_directories(
 target_link_libraries(Astar_planner_lib
   ${catkin_LIBRARIES}
 )
+# target_link_libraries(Decaymap_detect_lib
+#   ${catkin_LIBRARIES}
+#   ${PCL_LIBRARIES}
+#   ${THIRD_PARTY}
+# )
 target_link_libraries(traj_plan_3D
   Astar_planner_lib
+  # Decaymap_detect_lib
   ${catkin_LIBRARIES}
 )
 target_link_libraries(loop_dect

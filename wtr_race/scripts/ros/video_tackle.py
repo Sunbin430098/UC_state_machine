@@ -31,21 +31,23 @@ class LoopDect:
     def camera_callback(self,data):
         # 使用cv_bridge将ROS的图像数据转换成OpenCV的图像格式
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")     
-            bgr_img = np.array(cv_image, dtype=np.uint8)
+            self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")     
+            self.bgr_img = np.array(self.cv_image, dtype=np.uint8)
         except CvBridgeError as error:
             rospy.loginfo("error")
 
-        # hsv_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
-        # red_img = cv2.inRange(hsv_img, (0,133,70), (5,255,255))   
+        self.hsv_img = cv2.cvtColor(self.bgr_img, cv2.COLOR_BGR2HSV)
+        self.red_img = cv2.inRange(self.hsv_img, (0,133,70), (5,255,255))   
         # blue_img = cv2.inRange(hsv_img, (104,213,26), (160,255,255))
              
         # red_radius = LoopDect.new_find_target(self,red_img,bgr_img,cv_image)
         # blue_radius = LoopDect.new_find_target(self,blue_img,bgr_img,cv_image)
+        lidar_ask_camera = rospy.get_param("lidar_ask_camera",0)
+        if lidar_ask_camera == 1:
+            camera_call_lidar = LoopDect.coordinate_transform(self,self.cv_image)
+            rospy.set_param("call_lidar",camera_call_lidar)
 
-        LoopDect.coordinate_transform(self,cv_image)
-
-    def new_find_target(self,arg1,arg2,arg3):
+    def new_find_target(self,arg1,arg2):
         dilating = cv2.morphologyEx(arg1, op=cv2.MORPH_DILATE, kernel=self.kernel, iterations=3)
         contours, hierarchy = cv2.findContours(dilating, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours)!=0:
@@ -63,9 +65,9 @@ class LoopDect:
                 if radius < 50 :
                     continue
                 if radius >50 :
-                    cv2.circle(arg3, center, int(radius), (0, 255, 255), 2)
+                    cv2.circle(arg2, center, int(radius), (0, 255, 255), 2)
                     print(radius)            
-            self.image_pub.publish(self.bridge.cv2_to_imgmsg(arg3, "bgr8"))
+            self.image_pub.publish(self.bridge.cv2_to_imgmsg(arg2, "bgr8"))
         else :
             diameter = 10000
             return diameter
@@ -126,7 +128,9 @@ class LoopDect:
         print(v)
         cv2.circle(arg1, (int(u), int(v)), 50, (0, 0, 255), -1)
         self.image_pub.publish(self.bridge.cv2_to_imgmsg(arg1, "bgr8"))
-        
+        red_radius = LoopDect.new_find_target(self,self.red_img,self.cv_image)
+        if red_radius > 0:
+            return 1
 
     def cleanup(self):
         rospy.loginfo("Shutting down vision node.")

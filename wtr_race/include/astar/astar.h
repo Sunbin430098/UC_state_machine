@@ -23,6 +23,8 @@ using namespace std;
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include "livox_lidar/livox_lidar.h"
+
 #define marker_length 50
 
 //  cells 表示一个珊格的结构体，包含 当前珊格索引值 和 当前珊格到目标珊格的总距离代价f值
@@ -56,6 +58,7 @@ timespec diff(timespec start, timespec end)
 
 namespace Astar_planner {
   // class AstarPlannerROS : public nav_core::BaseGlobalPlanner (不继承了)
+  // class AstarPlannerROS : public LivoxDetect
   class AstarPlannerROS
   {
     public:

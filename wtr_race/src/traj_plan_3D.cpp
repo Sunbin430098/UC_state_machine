@@ -20,6 +20,8 @@
 
 #include "astar/astar.h"
 
+// #include "livox_lidar/livox_lidar.h"
+
 std_msgs::Float32 msg;
 
 using namespace Eigen;
@@ -27,7 +29,7 @@ using namespace std;
 using namespace ros;
 
 #define refresh -1
-#define start 0                     //判断是否是第一次更新
+#define start_ 0                     //判断是否是第一次更新
 
 //process2---------
 #define maxPointParts 20            
@@ -53,20 +55,22 @@ vector <double>  LivoxZone_(3);
 float livox_odom_w;
 
 //auto_decision---------------
-vector<double> HitRateArray(11);
-vector<int> HitPointArray(11);
-//柱子最上面的圆环颜色0表示没有，1表示红,2表示蓝，需要从视觉模块通过动态参数传过来
-vector<int> OverallSituation(11);
-bool decisionFlag;  //是否进行决策
+#define PillarNumber  11
+vector<double> HitRateArray(11);                            //命中率
+vector<int> HitPointArray(11);                              //得分
+vector<int> OverallSituation(11);                           //最上方环的状态
+// vector<vector<double>> PillarLocation(PillarNumber,vector<double>(3,0)); //柱子位置坐标
+bool decisionFlag = true;  //是否进行决策
 int OwnScore;   
 int OpponentScore;  //先考虑己方得分与对方得分，如果识别够准添加对方策略判断
 bool centralCondition; //中间大柱子情况
+int TargetPillar ;
 
 typedef enum{
     StartZoneModel = 0 ,
     LivoxZoneModel ,
 }StateControl;
-StateControl StartState = LivoxZoneModel;
+StateControl StartState = StartZoneModel;
 
 typedef enum{
     process1 = 0 ,
@@ -76,7 +80,6 @@ typedef enum{
     process5 ,
 }debugProcessModel;
 debugProcessModel ProcessModel = process5;
-
 
 class Config
 {
@@ -316,21 +319,22 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         void sim_odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg);
         void gogogo();
-        void auto_decision();
+        void auto_decision(const ros::TimerEvent&);
+        void pillar_detect();
     private:
-        ros::NodeHandle nh_ ;
+        ros::NodeHandle traj_nh_ ;
         ros::Subscriber point_sub;
         ros::Subscriber joy_sub;
         
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
-        void motion_plan_callback(const ros::TimerEvent &e);
+        // void motion_plan_callback(const ros::TimerEvent &e);
 
         int ConfigProcessModel;
         //process1---------
         int point_count ;
         int pointNumber;
-        int refreshTime=start;
+        int refreshTime=start_;
         
         //process2---------
         int maxParts;
@@ -362,43 +366,57 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         //grid_map---------
         ros::Subscriber map_sub;
 
+        ros::Timer timer;
+
 };
 
 TrajPlan_3D::TrajPlan_3D()
 {
+    // ros::NodeHandle my_livox_nh("~");
+    // LivoxDetect livoxdetect(my_livox_nh);
     // pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
     // pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
     // pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
     msg.data = 60;
     point_count = 1;
-    point_sub = nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
-    motion_pub = nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/send_topic",10);
-    sim_motion_pub = nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
-    joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
-    odom_sub = nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
-    map_sub = nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
+    point_sub = traj_nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
+    motion_pub = traj_nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/send_topic",10);
+    sim_motion_pub = traj_nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
+    joy_sub = traj_nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
+    odom_sub = traj_nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
+    map_sub = traj_nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
+    // timer = nh_.createTimer(ros::Duration(1), &TrajPlan_3D::auto_decision,this);
     
-    nh_.param("A_Zone_Button", A_Zone_Button_, A_Zone_Button_);
-    nh_.param("B_Zone_Button", B_Zone_Button_, B_Zone_Button_);
-    nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
-    nh_.param("hang_Button", hang_Button_, hang_Button_);
+    traj_nh_.param("A_Zone_Button", A_Zone_Button_, A_Zone_Button_);
+    traj_nh_.param("B_Zone_Button", B_Zone_Button_, B_Zone_Button_);
+    traj_nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
+    traj_nh_.param("hang_Button", hang_Button_, hang_Button_);
 
-    nh_.getParam("HitRate", HitRateArray);
-    nh_.getParam("HitPoint", HitPointArray);
-    nh_.getParam("OverallSituation",OverallSituation);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/HitRate", HitRateArray);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/HitPoint", HitPointArray);
+
+    // vector<double> TempPillarLocation(3*PillarNumber,0);
+    // traj_nh_.getParam("traj_plan_3D/auto_decesion/PillarLocation",TempPillarLocation);
+    // for(int i=0;i<PillarNumber;i++)
+    // {
+    //     for(int j=0;j<3;j++)
+    //     {
+    //         PillarLocation[i][j] = TempPillarLocation[i*3+j];
+    //     }
+    // }
 
     switch (ProcessModel)
     {
         case process1:
         {
-            nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
+            traj_nh_.getParam("/traj_plan_3D/PointNumber", pointNumber);   //load number of points
             break;
         }
         case process2:
         {
-            nh_.getParam("/traj_plan_3D/MaxParts",maxParts);          //load point parts array
+            traj_nh_.getParam("/traj_plan_3D/MaxParts",maxParts);          //load point parts array
             vector<int> TempPointNumberArray(maxParts,0);
-            nh_.getParam("/traj_plan_3D/PointArray",TempPointNumberArray);
+            traj_nh_.getParam("/traj_plan_3D/PointArray",TempPointNumberArray);
             for(int i=0;i<maxParts;i++)
             {
                 PointNumberArray[i] = TempPointNumberArray[i];
@@ -408,9 +426,9 @@ TrajPlan_3D::TrajPlan_3D()
         }
         case process3:
         {
-            nh_.getParam("/traj_plan_3D/MaxPointSetNumber", maxPointSetNumber);
+            traj_nh_.getParam("/traj_plan_3D/MaxPointSetNumber", maxPointSetNumber);
             vector<float> TempCoordinatePointSet(maxPointSetNumber,0);
-            nh_.getParam("/traj_plan_3D/PointSet", TempCoordinatePointSet);
+            traj_nh_.getParam("/traj_plan_3D/PointSet", TempCoordinatePointSet);
             for(int i=0;i<maxPointSetNumber/3;i++)
             {
                 for(int j=0;j<3;j++)
@@ -427,17 +445,17 @@ TrajPlan_3D::TrajPlan_3D()
         }
         case process4:
         {
-            nh_.getParam("/traj_plan_3D/MaxParts_",maxParts_);          //区间的段数4
+            traj_nh_.getParam("/traj_plan_3D/MaxParts_",maxParts_);          //区间的段数4
             vector<int> TempPointArray_(maxParts_,0);                   //加载设置每段点数的向量 [3,3,4,4]
-            nh_.getParam("/traj_plan_3D/PointArray_",TempPointArray_);  
+            traj_nh_.getParam("/traj_plan_3D/PointArray_",TempPointArray_);  
             for(int i=0;i<maxParts_;i++)
             {
                 PointNumberArray_[i] = TempPointArray_[i];
                 ROS_INFO("PointNumberArray[%d]=%d",i,PointNumberArray_[i]);
             }
-            nh_.getParam("/traj_plan_3D/MaxPointSetNumber_", maxPointSetNumber_);   //加载所有元素的总数，即坐标数*3  42
+            traj_nh_.getParam("/traj_plan_3D/MaxPointSetNumber_", maxPointSetNumber_);   //加载所有元素的总数，即坐标数*3  42
             vector<float> TempCoordinatePointSet_(maxPointSetNumber_,0); 
-            nh_.getParam("/traj_plan_3D/PointSet_",TempCoordinatePointSet_);     //一维数组加载所有的点  42个元素组成的数组
+            traj_nh_.getParam("/traj_plan_3D/PointSet_",TempCoordinatePointSet_);     //一维数组加载所有的点  42个元素组成的数组
             int base_count = 3*TempPointArray_[0];
             for(int i=0;i<maxParts_;i++)
             {
@@ -456,16 +474,16 @@ TrajPlan_3D::TrajPlan_3D()
         }
         case process5:
         {
-            nh_.getParam("/traj_plan_3D/FireZoneA",FireZoneA_);
-            nh_.getParam("/traj_plan_3D/FireZoneB",FireZoneB_);
-            nh_.getParam("/traj_plan_3D/FireZoneC",FireZoneC_);
-            nh_.getParam("/traj_plan_3D/StartZone",StartZone_);
+            traj_nh_.getParam("/traj_plan_3D/FireZoneA",FireZoneA_);
+            traj_nh_.getParam("/traj_plan_3D/FireZoneB",FireZoneB_);
+            traj_nh_.getParam("/traj_plan_3D/FireZoneC",FireZoneC_);
+            traj_nh_.getParam("/traj_plan_3D/StartZone",StartZone_);
             protectFlag=true;
             //plus----------------addLivoxOdom----------------------------
-            nh_.getParam("fastlio_mapping/livox_odom_x",LivoxZone_[0]);
-            nh_.getParam("fastlio_mapping/livox_odom_y",LivoxZone_[1]);
-            nh_.getParam("fastlio_mapping/livox_odom_z",LivoxZone_[2]);
-            nh_.getParam("fastlio_mapping/livox_odom_w",livox_odom_w);
+            traj_nh_.getParam("fastlio_mapping/livox_odom_x",LivoxZone_[0]);
+            traj_nh_.getParam("fastlio_mapping/livox_odom_y",LivoxZone_[1]);
+            traj_nh_.getParam("fastlio_mapping/livox_odom_z",LivoxZone_[2]);
+            traj_nh_.getParam("fastlio_mapping/livox_odom_w",livox_odom_w);
             break;     
         }
         default:
@@ -477,7 +495,7 @@ void TrajPlan_3D::gogogo()
 {
     ros::NodeHandle nh_priv("~");
     Config config(nh_priv);
-    Visualizer viz(config, nh_);
+    Visualizer viz(config, traj_nh_);
     ros::Rate rate(10);
     Eigen::Vector3d iV(-0.015, -0.01, 0.0), fV(0.0, 0.0, 0.0);
     Eigen::Vector3d iA(0.0, 0.0, 0.0), fA(0.0, 0.0, 0.0); //规定航点处的速度和加速度
@@ -549,7 +567,7 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
             if(point_count== refresh)
             {
                 int i;
-                if(refreshTime != start){i=0;}
+                if(refreshTime != start_){i=0;}
                 else{i=1;refreshTime=-1;}
                 for(;i<pointNumber;i++)
                 {
@@ -577,7 +595,7 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
             {
                 int i;
 
-                if(refreshTime != start){i=0;}
+                if(refreshTime != start_){i=0;}
                 else{i=1;refreshTime=-1;}
                 for(;i<PointNumberArray[IntervalNumber-1];i++)
                 {
@@ -652,7 +670,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     }
                     gogogo();
                     int popTemp;
-                    if(IntervalNumber_ != start){popTemp=0;}
+                    if(IntervalNumber_ != start_){popTemp=0;}
                     else{popTemp=1;}
                     for(;popTemp<PointNumberArray_[IntervalNumber_];popTemp++)
                     {
@@ -756,11 +774,17 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
    
 }
 
-void TrajPlan_3D::auto_decision()
+void TrajPlan_3D::pillar_detect()
+{
+    traj_nh_.getParam("decay_map_test/decay_map/OverallSituation",OverallSituation);
+    // ROS_INFO("")
+}
+
+void TrajPlan_3D::auto_decision(const ros::TimerEvent&)
 {
     if(decisionFlag)
     {
-
+        pillar_detect();
     }
 }
 
@@ -771,6 +795,11 @@ int main(int argc,char **argv)
     TrajPlan_3D tp_3D;
     ROS_INFO("Traj_plan start, point number");
     ros::spin();
+
+    // ros::AsyncSpinner spinner(0);
+    // spinner.start();
+    // ros::waitForShutdown();
+
     
     return 0;
 }

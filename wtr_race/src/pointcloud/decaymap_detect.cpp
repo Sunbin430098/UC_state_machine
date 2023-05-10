@@ -163,45 +163,86 @@
 //     });
 // }
 
-#include "livox_lidar/plan_env/decay_map.hpp"
+#include "livox_lidar/livox_lidar.h"
+vector<vector<double>> PillarLocation (PointSizeNumber,vector<double>(3,0));
 
-class LivoxDetect
-{
-    public:
-        LivoxDetect(ros::NodeHandle &n);
-        void lidarCallback(const ros::TimerEvent&);
-
-    private:
-        ros::NodeHandle nh;
-        ros::Timer timer;
-        DecayMap::Ptr dcm_ptr;
-        shared_ptr<DecayMapConfig> dcm_cfg_ptr;
-};
-
+// LivoxDetect::LivoxDetect(ros::NodeHandle &n): my_livox_nh("~")
 LivoxDetect::LivoxDetect(ros::NodeHandle &n)
 {
-    nh = n;
-    timer = nh.createTimer(ros::Duration(0.5), &LivoxDetect::lidarCallback,this);
-    dcm_cfg_ptr.reset(new DecayMapConfig(nh));
-    dcm_ptr.reset(new DecayMap(nh, *dcm_cfg_ptr));
+    my_livox_nh = n;
+    timer = my_livox_nh.createTimer(ros::Duration(1), &LivoxDetect::lidarCallback,this);
+    dcm_cfg_ptr.reset(new DecayMapConfig(my_livox_nh));
+    dcm_ptr.reset(new DecayMap(my_livox_nh, *dcm_cfg_ptr));
 
 }
 
 void LivoxDetect::lidarCallback(const ros::TimerEvent&)
+// vector<int> LivoxDetect::lidarCallback(vector<vector<double>> PillarLocation,int TargetPillar)
 {
     // Vec3 a(20,20,1);
     // Vec3 a(-0.4,-0.4,0.15);
     // bool t = dcm_ptr->isOccupied(a);
     // std::cout<<"t = "<<t<<std::endl;
-    Eigen::Vector3d maxbox_size(8,8,2);
-    Eigen::Vector3d minbox_size(-8,-8,0);
+    // Eigen::Vector3d maxbox_size(8,8,2);
+    // Eigen::Vector3d minbox_size(-8,-8,0);
+    my_livox_nh.getParam("traj_plan_3D/auto_decesion/TargetPillar",TargetPillar);
+    vector<double> TempPillarLocation(3*PointSizeNumber,0);
+    my_livox_nh.getParam("traj_plan_3D/auto_decesion/PillarLocation",TempPillarLocation);
+    for(int i=0;i<PointSizeNumber;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            PillarLocation[i][j] = TempPillarLocation[i*3+j];
+        }
+    }
     vector<Eigen::Vector3d>  points;
+    vector<int> NowPointSizeArray(PointSizeNumber,0);
+    vector<int> LastPointSizeArray(PointSizeNumber,0);
+    vector<int> OverallSituation(PointSizeNumber,0); 
+    delta_x = 0.2;
+    delta_y = 0.2;
+    delta_z = 0.1;
+    // dcm_ptr->boxSearchInflate(maxbox_size,minbox_size,points);
+    // // for (const auto& point : points) 
+    // // { std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;}
+    // ROS_INFO("%d",points.size());
 
-    dcm_ptr->boxSearchInflate(maxbox_size,minbox_size,points);
-    // for (const auto& point : points) 
-    // { std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;}
-    ROS_INFO("%d",points.size());
-    // ROS_INFO("Timer callback triggered");
+    for(int i=0;i<PointSizeNumber;i++)
+    {
+        Eigen::Vector3d maxbox_size(PillarLocation[i][0]+delta_x,PillarLocation[i][1]+delta_y,PillarLocation[i][2]+delta_z);
+        Eigen::Vector3d minbox_size(PillarLocation[i][0]-delta_x,PillarLocation[i][1]-delta_y,PillarLocation[i][2]-delta_z);
+        dcm_ptr->boxSearchInflate(maxbox_size,minbox_size,points);
+        // ROS_INFO("%d",now_points.size());
+        NowPointSizeArray[i] = points.size();
+    }
+    for(int i=0;i<PointSizeNumber;i++)
+    {
+        if((NowPointSizeArray[i]-LastPointSizeArray[i]) < ThreshholdPoints)//初始柱子为空
+        {
+            ROS_INFO("No loop add");
+            OverallSituation[i] = 0;
+        }
+        else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar!=i))//对方射中
+        {
+            ROS_INFO("Opposite shot");
+            OverallSituation[i] = 2;
+        }
+        else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar==i))
+        {
+            int camera_call_lidar = 0;
+            ROS_INFO("Add visual judgement");//参数服务器链接python视觉模块
+            my_livox_nh.setParam("lidar_ask_camera",1);
+            my_livox_nh.getParam("call_lidar",camera_call_lidar);
+            if(camera_call_lidar==1)//自己队伍颜色
+            {
+                OverallSituation[i] = 1;
+            }
+            else{OverallSituation[i] = 2;}
+        } 
+    }
+    my_livox_nh.setParam("decay_map/OverallSituation",OverallSituation);
+    LastPointSizeArray = NowPointSizeArray;
+    // return OverallSituation;
 }
 
 int main(int argc, char **argv) {
