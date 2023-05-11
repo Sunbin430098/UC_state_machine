@@ -56,15 +56,25 @@ float livox_odom_w;
 
 //auto_decision---------------
 #define PillarNumber  11
-vector<double> HitRateArray(11);                            //命中率
-vector<int> HitPointArray(11);                              //得分
-vector<int> OverallSituation(11);                           //最上方环的状态
-// vector<vector<double>> PillarLocation(PillarNumber,vector<double>(3,0)); //柱子位置坐标
+#define ZoneNumber    3
+vector<double> HitRateArray(PillarNumber);                            //命中率
+vector<int> HitPointArray(PillarNumber);                              //得分
+vector<float> PointRateArray(PillarNumber);                           //得分率
+vector<float> AdjustTime_A_(PillarNumber);                            //调整时间
+vector<float> AdjustTime_B_(PillarNumber);
+vector<float> AdjustTime_C_(PillarNumber);
+vector<float> ZoneTransTime_(ZoneNumber*(ZoneNumber-1));                //转移时间
+vector<vector<float>> CompletePointTimeRate_(ZoneNumber*(ZoneNumber-1),vector<float>(PillarNumber,0));   
+                                                    //该柱子的得分率比调整+转移的完成时间(从ABC出发->到达调整后发射的柱子)
+vector<int> OverallSituation(PillarNumber);                           //最上方环的状态
 bool decisionFlag = true;  //是否进行决策
 int OwnScore;   
 int OpponentScore;  //先考虑己方得分与对方得分，如果识别够准添加对方策略判断
 bool centralCondition; //中间大柱子情况
-int TargetPillar ;
+int StartZone_Index;
+int TargetPillar_Index;
+int TargetZone_Index;
+
 
 typedef enum{
     StartZoneModel = 0 ,
@@ -321,6 +331,7 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         void gogogo();
         void auto_decision(const ros::TimerEvent&);
         void pillar_detect();
+        void get_target();
     private:
         ros::NodeHandle traj_nh_ ;
         ros::Subscriber point_sub;
@@ -367,6 +378,7 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         ros::Subscriber map_sub;
 
         ros::Timer timer;
+        ros::Time start_time;
 
 };
 
@@ -377,6 +389,7 @@ TrajPlan_3D::TrajPlan_3D()
     // pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
     // pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
     // pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
+    start_time = ros::Time::now();
     msg.data = 60;
     point_count = 1;
     point_sub = traj_nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
@@ -385,25 +398,32 @@ TrajPlan_3D::TrajPlan_3D()
     joy_sub = traj_nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
     odom_sub = traj_nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
     map_sub = traj_nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
-    // timer = nh_.createTimer(ros::Duration(1), &TrajPlan_3D::auto_decision,this);
+    timer = traj_nh_.createTimer(ros::Duration(0.5), &TrajPlan_3D::auto_decision,this);
     
     traj_nh_.param("A_Zone_Button", A_Zone_Button_, A_Zone_Button_);
     traj_nh_.param("B_Zone_Button", B_Zone_Button_, B_Zone_Button_);
     traj_nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
     traj_nh_.param("hang_Button", hang_Button_, hang_Button_);
 
-    traj_nh_.getParam("traj_plan_3D/auto_decesion/HitRate", HitRateArray);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/ZoneA/HitRate", HitRateArray);
     traj_nh_.getParam("traj_plan_3D/auto_decesion/HitPoint", HitPointArray);
-
-    // vector<double> TempPillarLocation(3*PillarNumber,0);
-    // traj_nh_.getParam("traj_plan_3D/auto_decesion/PillarLocation",TempPillarLocation);
-    // for(int i=0;i<PillarNumber;i++)
-    // {
-    //     for(int j=0;j<3;j++)
-    //     {
-    //         PillarLocation[i][j] = TempPillarLocation[i*3+j];
-    //     }
-    // }
+    for(int i=0;i<PillarNumber;i++)
+    {
+        PointRateArray[i] = HitRateArray[i]*HitPointArray[i];
+    }
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/Time/AdjustTime/ZoneA",AdjustTime_A_);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/Time/AdjustTime/ZoneA",AdjustTime_B_);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/Time/AdjustTime/ZoneA",AdjustTime_C_);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/Time/TransTime",ZoneTransTime_);
+    for(int i=0;i<ZoneNumber*(ZoneNumber-1);i++)
+    {
+        for(int j=0;j<PillarNumber;j++)
+        {
+            if(i<(ZoneNumber-1)){CompletePointTimeRate_[i][j] = PointRateArray[j]/(ZoneTransTime_[i]+AdjustTime_A_[j]);}//在A区出发
+            else if(i<2*(ZoneNumber-1)){CompletePointTimeRate_[i][j] = PointRateArray[j]/(ZoneTransTime_[i]+AdjustTime_B_[j]);}//在B区出发
+            else if(i<3*(ZoneNumber-1)){CompletePointTimeRate_[i][j] = PointRateArray[j]/(ZoneTransTime_[i]+AdjustTime_C_[j]);}//在C区出发
+        }
+    }
 
     switch (ProcessModel)
     {
@@ -774,18 +794,59 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
    
 }
 
+void TrajPlan_3D::get_target()
+{
+    float max = CompletePointTimeRate_[0][0];
+    if(StartZone_ == FireZoneA_){StartZone_Index = 0;}
+    else if(StartZone_ == FireZoneB_){StartZone_Index = 1;}
+    else if(StartZone_ == FireZoneC_){StartZone_Index = 2;}
+    for (int i = 0; i < ZoneNumber*(ZoneNumber-1); i++) {
+        for (int j = 0; j < PillarNumber; j++) 
+        {
+            //当先位置不能去    (0->A->12;1->B->34;2->C->56)
+            if((i!=StartZone_Index*2+1)&&(i!=StartZone_Index*2+2))
+            {
+                CompletePointTimeRate_[i][j] *= 0;
+            }
+            else{
+                CompletePointTimeRate_[i][j] *= 1;
+            }
+            //最上面已经射中的柱子不用再射
+            if(OverallSituation[j] == 1)
+            {
+                CompletePointTimeRate_[i][j] *= 0;
+            }
+            else if(OverallSituation[j] == 2)
+            {
+                CompletePointTimeRate_[i][j] *= 10;
+            }
+            else{CompletePointTimeRate_[i][j] *= 1;}
+            //综合处理得到的最大索引
+            if (CompletePointTimeRate_[i][j] > max) {
+                max = CompletePointTimeRate_[i][j];
+                TargetZone_Index = i;
+                TargetPillar_Index = j;
+            }
+        }
+    }
+}
+
 void TrajPlan_3D::pillar_detect()
 {
     traj_nh_.getParam("decay_map_test/decay_map/OverallSituation",OverallSituation);
-    // ROS_INFO("")
 }
 
+//尽快大胜
 void TrajPlan_3D::auto_decision(const ros::TimerEvent&)
 {
+    ros::Time right_now = ros::Time::now();
+    ros::Duration pass_time = right_now-start_time;
     if(decisionFlag)
     {
         pillar_detect();
+        get_target();
     }
+    // ROS_INFO("pass time : %f",pass_time.toSec()); 
 }
 
 int main(int argc,char **argv)
@@ -794,11 +855,11 @@ int main(int argc,char **argv)
     
     TrajPlan_3D tp_3D;
     ROS_INFO("Traj_plan start, point number");
-    ros::spin();
+    // ros::spin();
 
-    // ros::AsyncSpinner spinner(0);
-    // spinner.start();
-    // ros::waitForShutdown();
+    ros::AsyncSpinner spinner(0);
+    spinner.start();
+    ros::waitForShutdown();
 
     
     return 0;
