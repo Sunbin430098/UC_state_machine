@@ -74,7 +74,8 @@ add_message_files(
   WheelOdomStamped.msg
   SpeedControlStatus.msg
   SpeedControlSet_sub.msg
-  Posture.msg
+  wtr_posture.msg
+  wtr_control.msg
 )
 
 add_service_files(

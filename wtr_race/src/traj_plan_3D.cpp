@@ -74,7 +74,7 @@ bool centralCondition; //中间大柱子情况
 int StartZone_Index;
 int TargetPillar_Index;
 int TargetZone_Index;
-
+vector<float> chasis2map_dxyz(3);
 
 typedef enum{
     StartZoneModel = 0 ,
@@ -380,6 +380,8 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         ros::Timer timer;
         ros::Time start_time;
 
+        float lidar_decay_time;
+
 };
 
 TrajPlan_3D::TrajPlan_3D()
@@ -398,8 +400,10 @@ TrajPlan_3D::TrajPlan_3D()
     joy_sub = traj_nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
     odom_sub = traj_nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
     map_sub = traj_nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
-    timer = traj_nh_.createTimer(ros::Duration(0.5), &TrajPlan_3D::auto_decision,this);
-    
+    timer = traj_nh_.createTimer(ros::Duration(1), &TrajPlan_3D::auto_decision,this);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/LidarPart/LidarDecayTime",lidar_decay_time);
+    traj_nh_.getParam("traj_plan_3D/auto_decesion/Chasis/ChasisDxyz",chasis2map_dxyz);
+
     traj_nh_.param("A_Zone_Button", A_Zone_Button_, A_Zone_Button_);
     traj_nh_.param("B_Zone_Button", B_Zone_Button_, B_Zone_Button_);
     traj_nh_.param("C_Zone_Button", C_Zone_Button_, C_Zone_Button_);
@@ -499,6 +503,13 @@ TrajPlan_3D::TrajPlan_3D()
             traj_nh_.getParam("/traj_plan_3D/FireZoneC",FireZoneC_);
             traj_nh_.getParam("/traj_plan_3D/StartZone",StartZone_);
             protectFlag=true;
+            for(int i=0;i<3;i++)
+            {
+                FireZoneA_[i] = FireZoneA_[i]-chasis2map_dxyz[i];
+                FireZoneB_[i] = FireZoneB_[i]-chasis2map_dxyz[i];
+                FireZoneC_[i] = FireZoneC_[i]-chasis2map_dxyz[i];
+                StartZone_[i] = StartZone_[i]-chasis2map_dxyz[i];
+            }
             //plus----------------addLivoxOdom----------------------------
             traj_nh_.getParam("fastlio_mapping/livox_odom_x",LivoxZone_[0]);
             traj_nh_.getParam("fastlio_mapping/livox_odom_y",LivoxZone_[1]);
@@ -841,12 +852,13 @@ void TrajPlan_3D::auto_decision(const ros::TimerEvent&)
 {
     ros::Time right_now = ros::Time::now();
     ros::Duration pass_time = right_now-start_time;
-    if(decisionFlag)
+    if(decisionFlag&&pass_time.toSec()>lidar_decay_time)
     {
         pillar_detect();
         get_target();
+        std::cout<<"main transfer"<<std::endl;
     }
-    // ROS_INFO("pass time : %f",pass_time.toSec()); 
+    ROS_INFO("pass time : %f",pass_time.toSec()); 
 }
 
 int main(int argc,char **argv)

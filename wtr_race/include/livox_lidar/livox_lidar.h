@@ -3,7 +3,7 @@
 
 #include "livox_lidar/plan_env/decay_map.hpp"
 
-#define ThreshholdPoints 100
+#define ThreshholdPoints 9
 #define PointSizeNumber 11
 
 class LivoxDetect
@@ -22,7 +22,9 @@ class LivoxDetect
         float delta_z;
         ros::Timer timer;
         int TargetPillar;
-        
+        ros::Time start_time;
+        float lidar_decay_time;
+
 };
 
 #endif

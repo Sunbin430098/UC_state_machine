@@ -5,12 +5,12 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <mavros_msgs/SpeedControlStatus.h>
-#include "mavros_msgs/SpeedControlSet.h"
-#include "mavros_msgs/SpeedControlSet_sub.h"
-#include "mavros_msgs/Posture.h"
-#include "mavlink/v2.0/common/mavlink_msg_control_set.hpp"
-#include "mavlink/v2.0/common/mavlink_msg_speed_control_status.hpp"
+// #include "mavlink/v2.0/common/mavlink_msg_posture.h"
+// #include "mavlink/v2.0/common/mavlink_msg_control.h"
+#include "mavlink/v2.0/common/mavlink_msg_posture.hpp"
+#include "mavlink/v2.0/common/mavlink_msg_control.hpp"
+#include "mavros_msgs/wtr_control.h"
+#include "mavros_msgs/wtr_posture.h"
 
 #include "geometry_msgs/Twist.h"
 
@@ -25,17 +25,16 @@ public:
 	SpeedControlPlugin() : PluginBase(),
 		speed_control_nh("~speed_control")
 	{ }
- 
 	void initialize(UAS &uas_)
 	{
 		PluginBase::initialize(uas_);
-		//实例化 发布者、订阅者、客户端、服务端 对象
-		control_pub = speed_control_nh.advertise<mavros_msgs::SpeedControlStatus>("status", 10);
-		send_service = speed_control_nh.advertiseService("send", &SpeedControlPlugin::send_cb_service, this);
+		control_pub = speed_control_nh.advertise<mavros_msgs::wtr_control>("status", 10);
+		// send_service = speed_control_nh.advertiseService("send", &SpeedControlPlugin::send_cb_service, this);
 		// send_subscriber = speed_control_nh.subscribe<mavros_msgs::SpeedControlSet_sub>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
 		send_subscriber = speed_control_nh.subscribe<geometry_msgs::Twist>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
-
-		pos_publisher = speed_control_nh.advertise<mavros_msgs::Posture>("posture", 10);
+		
+		pos_publisher = speed_control_nh.advertise<mavros_msgs::wtr_posture>("posture", 10);
+	
 	}
 
     /**
@@ -53,10 +52,7 @@ public:
 	}
 
 private:
-	//实例化 ROS 句柄
 	ros::NodeHandle speed_control_nh;
-
-	//创建发布者、订阅者、服务端、客户端
 	ros::Publisher control_pub;
 	ros::ServiceServer send_service;
 	ros::Subscriber send_subscriber;
@@ -69,16 +65,16 @@ private:
 	 * @param msg 
 	 * @param speed_control 
 	 */
-
-	void handle_speed_control(const mavlink::mavlink_message_t *msg, mavlink::common::msg::SPEED_CONTROL_STATUS &speed_control)
+	
+	void handle_speed_control(const mavlink::mavlink_message_t *msg, mavlink::common::msg::CONTROL &speed_control)
 	{
-		auto speed_control_msg = boost::make_shared<mavros_msgs::SpeedControlStatus>();
-		speed_control_msg->header.stamp = ros::Time::now(); 
-		speed_control_msg->vx_state = speed_control.vx_state;
-		speed_control_msg->vy_state = speed_control.vy_state;
-		speed_control_msg->vx_state = speed_control.vw_state;
+		auto speed_control_msg = boost::make_shared<mavros_msgs::wtr_control>();
+		// speed_control_msg->header.stamp = ros::Time::now(); 
+		speed_control_msg->vx_set = speed_control.vx_set;
+		speed_control_msg->vy_set = speed_control.vy_set;
+		speed_control_msg->vx_set = speed_control.vw_set;
 
-		control_pub.publish(speed_control_msg);
+		// control_pub.publish(speed_control_msg);
 		//posture
 		// auto mavros_msg_posture = boost::make_shared<mavros_msgs::Posture>();
 		// mavros_msg_posture->header.stamp = ros::Time::now();
@@ -96,43 +92,31 @@ private:
 	 * @return false 
 	 */
  
-	bool send_cb_service(mavros_msgs::SpeedControlSet::Request &req , mavros_msgs::SpeedControlSet::Response &responce)
-	{
-		mavlink::common::msg::CONTROL_SET msg;
-		//将server收到的request赋值给mavlink消息
-		msg.vx_set = req.vx_set;
-		msg.vy_set = req.vy_set;
-		msg.vw_set = req.vw_set;
-		
-		//响应发送成功
-		responce.send_success = true;
-		
-		//调用mavlink消息发送API
-		UAS_FCU(m_uas)->send_message_ignore_drop(msg);
-		return true;
-	}
-
-	// void send_callback_subscribe(const mavros_msgs::SpeedControlSet_sub::ConstPtr& speed_p)
+	// bool send_cb_service(mavros_msgs::SpeedControlSet::Request &req , mavros_msgs::SpeedControlSet::Response &responce)
 	// {
 	// 	mavlink::common::msg::CONTROL_SET msg;
-	// 	msg.vw_set = speed_p->vw_set_sub;
-	// 	msg.vy_set = speed_p->vy_set_sub;
-	// 	msg.vx_set = speed_p->vx_set_sub;
-
-	// 	msg.x_set = speed_p->x_set_sub;
-	// 	msg.y_set = speed_p->y_set_sub;
-	// 	// ROS_INFO("send_callback succcess!");
+	// 	//将server收到的request赋值给mavlink消息
+	// 	msg.vx_set = req.vx_set;
+	// 	msg.vy_set = req.vy_set;
+	// 	msg.vw_set = req.vw_set;
+		
+	// 	//响应发送成功
+	// 	responce.send_success = true;
+		
+	// 	//调用mavlink消息发送API
 	// 	UAS_FCU(m_uas)->send_message_ignore_drop(msg);
-	// } 
+	// 	return true;
+	// }
+
 	void send_callback_subscribe(const geometry_msgs::Twist::ConstPtr& speed_p)
 	{
-		mavlink::common::msg::CONTROL_SET msg;
-		// msg.vw_set = speed_p->angular.z;
-		// msg.vy_set = speed_p->linear.y;
-		// msg.vx_set = speed_p->linear.x;
-		msg.vw_set = 1;
-		msg.vy_set = 2;
-		msg.vx_set = 3;
+		mavlink::common::msg::CONTROL msg;
+		msg.vw_set = speed_p->angular.z;
+		msg.vy_set = speed_p->linear.y;
+		msg.vx_set = speed_p->linear.x;
+		// msg.vw_set = 1;
+		// msg.vy_set = 2;
+		// msg.vx_set = 3;
 		ROS_INFO("send_callback succcess!");
 		ROS_INFO("vx=%f,vy=%f,vw=%f",msg.vx_set,msg.vy_set,msg.vw_set);
 		UAS_FCU(m_uas)->send_message_ignore_drop(msg);

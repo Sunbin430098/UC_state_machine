@@ -1,6 +1,7 @@
 decay_map:
   # first for obstacle map, second for guide map
-  resolutions: [ 0.1, 0.3 ]
+  #分辨率：环25cm外径，21cm内径，但是分辨率不能小于0.5
+  resolutions: [ 0.05, 0.3 ]
   # resolutions: [ 0.1, 0.8 ]
   inflation_steps: [1,1 ]
   odom: "/lidar_slam/odom"
