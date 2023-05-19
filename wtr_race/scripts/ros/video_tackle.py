@@ -42,8 +42,11 @@ class LoopDect:
              
         # red_radius = LoopDect.new_find_target(self,red_img,bgr_img,cv_image)
         # blue_radius = LoopDect.new_find_target(self,blue_img,bgr_img,cv_image)
-        lidar_ask_camera = rospy.get_param("lidar_ask_camera",0)
-        if lidar_ask_camera == 1:
+        self.lidar_ask_camera = rospy.get_param("/decay_map_test/lidar_ask_camera",0)
+        self.lidar_ask_camera_x = rospy.get_param("/decay_map_test/lidar_ask_camera",0)
+        self.lidar_ask_camera_y = rospy.get_param("/decay_map_test/lidar_ask_camera",0)
+        self.lidar_ask_camera_z = rospy.get_param("/decay_map_test/lidar_ask_camera",0)
+        if self.lidar_ask_camera == 1:
             camera_call_lidar = LoopDect.coordinate_transform(self,self.cv_image)
             rospy.set_param("call_lidar",camera_call_lidar)
 
@@ -104,7 +107,8 @@ class LoopDect:
                             # Y轴：指向图像下方(yz改好了和世界逻辑相同)
                             # Z轴：指向相机前方
                             # x轴值应保持半米以上,视角不宽
-        world_point = np.array([[1.0], [0.445], [0.4], [1]])
+        world_point = np.array([[self.lidar_ask_camera_x], [self.lidar_ask_camera_y], [self.lidar_ask_camera_z], [1]])
+        # world_point = np.array([[1.0], [0.445], [0.4], [1]])
         camera_point = np.array(np.dot(external_matrix, world_point))
         # print(camera_point) 
         camera_point = camera_point/abs(camera_point[2])
@@ -131,6 +135,7 @@ class LoopDect:
         red_radius = LoopDect.new_find_target(self,self.red_img,self.cv_image)
         if red_radius > 0:
             return 1
+        # return 1
 
     def cleanup(self):
         rospy.loginfo("Shutting down vision node.")

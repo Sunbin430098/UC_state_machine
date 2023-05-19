@@ -73,7 +73,8 @@ MaxParts_:                       4        #此值小于等于PointArray_元素�
 FireZoneA:                     [1.5,5.5,0]
 FireZoneB:                     [5.0,-5.5,0]
 FireZoneC:                     [1.5,2,0]
-StartZone:                     [1,0,0]
+StartFireZone:                     [1.5,5.5,0]
+StartMoveZone:                    [0.5,0.5,0]
 expand_factor:                      2     #一倍膨胀对应5个像素
 point_pace:                         20    
 

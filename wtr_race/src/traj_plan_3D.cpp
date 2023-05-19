@@ -49,7 +49,8 @@ vector< vector < vector<double> > > CoordinatePointSet_(maxPointParts_,vector< v
 vector<double> FireZoneA_(3);
 vector<double> FireZoneB_(3);
 vector<double> FireZoneC_(3);
-vector<double> StartZone_(3);
+vector<double> StartFireZone_(3);   //为ABC三个区中的一个，是取环之后到达的第一个射环区
+vector<double> StartMoveZone_(3);   //车的移动起点
 vector<double> TargetZone_(3);
 vector <double>  LivoxZone_(3);
 float livox_odom_w;
@@ -75,10 +76,11 @@ int StartZone_Index;
 int TargetPillar_Index;
 int TargetZone_Index;
 vector<float> chasis2map_dxyz(3);
+bool FirstDecision = 1;
 
 typedef enum{
-    StartZoneModel = 0 ,
-    LivoxZoneModel ,
+    StartZoneModel = 0 ,//射环区域之间转移
+    LivoxZoneModel //任意一点转移到射环区
 }StateControl;
 StateControl StartState = StartZoneModel;
 
@@ -87,7 +89,7 @@ typedef enum{
     process2 ,
     process3 ,
     process4 ,
-    process5 ,
+    process5 
 }debugProcessModel;
 debugProcessModel ProcessModel = process5;
 
@@ -501,14 +503,16 @@ TrajPlan_3D::TrajPlan_3D()
             traj_nh_.getParam("/traj_plan_3D/FireZoneA",FireZoneA_);
             traj_nh_.getParam("/traj_plan_3D/FireZoneB",FireZoneB_);
             traj_nh_.getParam("/traj_plan_3D/FireZoneC",FireZoneC_);
-            traj_nh_.getParam("/traj_plan_3D/StartZone",StartZone_);
+            traj_nh_.getParam("/traj_plan_3D/StartFireZone",StartFireZone_);
+            traj_nh_.getParam("/traj_plan_3D/StartMoveZone",StartMoveZone_);
             protectFlag=true;
             for(int i=0;i<3;i++)
             {
                 FireZoneA_[i] = FireZoneA_[i]-chasis2map_dxyz[i];
                 FireZoneB_[i] = FireZoneB_[i]-chasis2map_dxyz[i];
                 FireZoneC_[i] = FireZoneC_[i]-chasis2map_dxyz[i];
-                StartZone_[i] = StartZone_[i]-chasis2map_dxyz[i];
+                StartFireZone_[i] = StartFireZone_[i]-chasis2map_dxyz[i];
+                StartMoveZone_[i] = StartMoveZone_[i]-chasis2map_dxyz[i];
             }
             //plus----------------addLivoxOdom----------------------------
             traj_nh_.getParam("fastlio_mapping/livox_odom_x",LivoxZone_[0]);
@@ -725,7 +729,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 ROS_INFO("joy start mdoel");
                 if(StartState == StartZoneModel)
                 {
-                    wPs.emplace_back(StartZone_[0],StartZone_[1],StartZone_[2]);
+                    wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
                 }
                 else if(StartState == LivoxZoneModel)
                 {
@@ -756,7 +760,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 {
                     protectFlag=false;
                 }
-                else if((TargetZone_[0] == StartZone_[0])&&(StartZone_[1] == StartZone_[1]))
+                else if((TargetZone_[0] == StartMoveZone_[0])&&(StartMoveZone_[1] == StartMoveZone_[1]))
                 {
                     protectFlag=false;
                 }
@@ -771,7 +775,7 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
                     if(StartState == StartZoneModel)
                     {
-                        wPs = makePlan(StartZone_,TargetZone_);
+                        wPs = makePlan(StartMoveZone_,TargetZone_);
                     }
                     else if(StartState == LivoxZoneModel)
                     {
@@ -783,9 +787,9 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                         std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
                         wPs.erase(k);//删除第一个元素
                     }
-                    StartZone_[0] = TargetZone_[0];
-                    StartZone_[1] = TargetZone_[1];
-                    StartZone_[2] = TargetZone_[2];
+                    StartMoveZone_[0] = TargetZone_[0];
+                    StartMoveZone_[1] = TargetZone_[1];
+                    StartMoveZone_[2] = TargetZone_[2];
                     protectFlag=true;
                 }
                 else{
@@ -807,14 +811,18 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 void TrajPlan_3D::get_target()
 {
+    if(FirstDecision==1)
+    {
+        if(StartFireZone_ == FireZoneA_){StartZone_Index = 0;}
+        else if(StartFireZone_ == FireZoneB_){StartZone_Index = 1;}
+        else if(StartFireZone_ == FireZoneC_){StartZone_Index = 2;}
+    }
+    else StartZone_Index = TargetZone_Index;
     float max = CompletePointTimeRate_[0][0];
-    if(StartZone_ == FireZoneA_){StartZone_Index = 0;}
-    else if(StartZone_ == FireZoneB_){StartZone_Index = 1;}
-    else if(StartZone_ == FireZoneC_){StartZone_Index = 2;}
     for (int i = 0; i < ZoneNumber*(ZoneNumber-1); i++) {
         for (int j = 0; j < PillarNumber; j++) 
         {
-            //当先位置不能去    (0->A->12;1->B->34;2->C->56)
+            //当前位置不能去    (0->A->12;1->B->34;2->C->56)
             if((i!=StartZone_Index*2+1)&&(i!=StartZone_Index*2+2))
             {
                 CompletePointTimeRate_[i][j] *= 0;
@@ -840,11 +848,13 @@ void TrajPlan_3D::get_target()
             }
         }
     }
+    FirstDecision = 0;
+    traj_nh_.setParam("traj_plan_3D/auto_decesion/TargetPillar",TargetPillar_Index);
 }
 
 void TrajPlan_3D::pillar_detect()
 {
-    traj_nh_.getParam("decay_map_test/decay_map/OverallSituation",OverallSituation);
+    traj_nh_.getParam("/decay_map_test/decay_map/OverallSituation",OverallSituation);
 }
 
 //尽快大胜
@@ -852,7 +862,7 @@ void TrajPlan_3D::auto_decision(const ros::TimerEvent&)
 {
     ros::Time right_now = ros::Time::now();
     ros::Duration pass_time = right_now-start_time;
-    if(decisionFlag&&pass_time.toSec()>lidar_decay_time)
+    if(decisionFlag&&pass_time.toSec()>lidar_decay_time&&decisionFlag==true)
     {
         pillar_detect();
         get_target();

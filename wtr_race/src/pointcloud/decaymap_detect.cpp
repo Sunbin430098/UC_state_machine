@@ -168,6 +168,8 @@ vector<vector<double>> PillarLocation (PointSizeNumber,vector<double>(3,0));
 vector<int> NowPointSizeArray(PointSizeNumber,0);
 vector<int> LastPointSizeArray(PointSizeNumber,0);
 vector<float> lidar2map_dxyz(3,0);
+vector<Eigen::Vector3d>  points;
+vector<int> OverallSituation(PointSizeNumber,0); 
 
 // LivoxDetect::LivoxDetect(ros::NodeHandle &n): my_livox_nh("~")
 LivoxDetect::LivoxDetect(ros::NodeHandle &n)
@@ -197,7 +199,8 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
     ros::Duration pass_time = right_now-start_time;
     if(pass_time.toSec()>lidar_decay_time)
     {
-        my_livox_nh.getParam("/traj_plan_3D/auto_decesion/TargetPillar",TargetPillar);//注意其他命名空间下的全局名字前加/
+        //注意其他命名空间下的全局名字前加/
+        my_livox_nh.getParam("/traj_plan_3D/auto_decesion/TargetPillar",TargetPillar);
         vector<double> TempPillarLocation(3*PointSizeNumber,0);
         my_livox_nh.getParam("/traj_plan_3D/auto_decesion/PillarLocation",TempPillarLocation);
         for(int i=0;i<PointSizeNumber;i++)
@@ -208,9 +211,6 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
                 // std::cout<<TempPillarLocation[i*3+j]<<std::endl;
             }
         }
-        vector<Eigen::Vector3d>  points;
-        vector<int> OverallSituation(PointSizeNumber,0); 
-
         // dcm_ptr->boxSearchInflate(maxbox_size,minbox_size,points);
         // // for (const auto& point : points) 
         // // { std::cout << "x: " << point.x() << ", y: " << point.y() << ", z: " << point.z() << std::endl;}
@@ -244,7 +244,10 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
                 int camera_call_lidar = 0;
                 ROS_INFO("Add visual judgement");//参数服务器链接python视觉模块
                 my_livox_nh.setParam("lidar_ask_camera",1);
-                my_livox_nh.getParam("call_lidar",camera_call_lidar);
+                my_livox_nh.setParam("lidar_ask_camera_x",PillarLocation[i][0]);
+                my_livox_nh.setParam("lidar_ask_camera_y",PillarLocation[i][1]);
+                my_livox_nh.setParam("lidar_ask_camera_z",PillarLocation[i][2]);
+                my_livox_nh.getParam("/call_lidar",camera_call_lidar);
                 if(camera_call_lidar==1)//自己队伍颜色
                 {
                     OverallSituation[i] = 1;
@@ -252,6 +255,7 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
                 else{OverallSituation[i] = 2;}
             } 
         }
+        // my_livox_nh.setParam("lidar_ask_camera",1);
         my_livox_nh.setParam("decay_map/OverallSituation",OverallSituation);
         LastPointSizeArray = NowPointSizeArray;
     }
