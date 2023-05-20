@@ -14,8 +14,8 @@
 
     <!-- <include file="$(find map_simulator)/launch/my_map.launch"/> -->
     
-    <include file="$(find wtr_race)/launch/lidar/wtr_decay_map.launch"/>
+    <!-- <include file="$(find wtr_race)/launch/lidar/wtr_decay_map.launch"/> -->
 
-    <include file="$(find wtr_race)/launch/visual/wtr_astra.launch"/>
+    <!-- <include file="$(find wtr_race)/launch/visual/wtr_astra.launch"/> -->
 
 </launch>

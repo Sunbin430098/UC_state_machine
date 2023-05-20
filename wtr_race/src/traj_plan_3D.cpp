@@ -51,6 +51,8 @@ vector<double> FireZoneB_(3);
 vector<double> FireZoneC_(3);
 vector<double> StartFireZone_(3);   //为ABC三个区中的一个，是取环之后到达的第一个射环区
 vector<double> StartMoveZone_(3);   //车的移动起点
+vector<double> PickupZoneA_(3);
+vector<double> PickupZoneB_(3);
 vector<double> TargetZone_(3);
 vector <double>  LivoxZone_(3);
 float livox_odom_w;
@@ -68,7 +70,7 @@ vector<float> ZoneTransTime_(ZoneNumber*(ZoneNumber-1));                //转移
 vector<vector<float>> CompletePointTimeRate_(ZoneNumber*(ZoneNumber-1),vector<float>(PillarNumber,0));   
                                                     //该柱子的得分率比调整+转移的完成时间(从ABC出发->到达调整后发射的柱子)
 vector<int> OverallSituation(PillarNumber);                           //最上方环的状态
-bool decisionFlag = true;  //是否进行决策
+
 int OwnScore;   
 int OpponentScore;  //先考虑己方得分与对方得分，如果识别够准添加对方策略判断
 bool centralCondition; //中间大柱子情况
@@ -76,7 +78,12 @@ int StartZone_Index;
 int TargetPillar_Index;
 int TargetZone_Index;
 vector<float> chasis2map_dxyz(3);
-bool FirstDecision = 1;
+bool decisionFlag = false;  //是否进行决策
+bool FirstDecision = false;
+bool FirstMove = true;
+bool SecondMove = false;
+bool PickupAgain = false;
+int traj_time_count = 0;
 
 typedef enum{
     StartZoneModel = 0 ,//射环区域之间转移
@@ -505,12 +512,16 @@ TrajPlan_3D::TrajPlan_3D()
             traj_nh_.getParam("/traj_plan_3D/FireZoneC",FireZoneC_);
             traj_nh_.getParam("/traj_plan_3D/StartFireZone",StartFireZone_);
             traj_nh_.getParam("/traj_plan_3D/StartMoveZone",StartMoveZone_);
+            traj_nh_.getParam("/traj_plan_3D/PichUpZoneA",PickupZoneA_);
+            traj_nh_.getParam("/traj_plan_3D/PickUpZoneB",PickupZoneB_);
             protectFlag=true;
             for(int i=0;i<3;i++)
             {
                 FireZoneA_[i] = FireZoneA_[i]-chasis2map_dxyz[i];
                 FireZoneB_[i] = FireZoneB_[i]-chasis2map_dxyz[i];
                 FireZoneC_[i] = FireZoneC_[i]-chasis2map_dxyz[i];
+                PickupZoneA_[i] = PickupZoneA_[i]-chasis2map_dxyz[i];
+                PickupZoneB_[i] = PickupZoneB_[i]-chasis2map_dxyz[i];
                 StartFireZone_[i] = StartFireZone_[i]-chasis2map_dxyz[i];
                 StartMoveZone_[i] = StartMoveZone_[i]-chasis2map_dxyz[i];
             }
@@ -726,96 +737,149 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         {
             if(joy->buttons[A_Zone_Button_]==1||joy->buttons[B_Zone_Button_]==1||joy->buttons[C_Zone_Button_]==1)
             {
-                ROS_INFO("joy start mdoel");
-                if(StartState == StartZoneModel)
+                if(FirstMove==true)
                 {
+                    ROS_INFO("Move to pickup zoneA !");
                     wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
-                }
-                else if(StartState == LivoxZoneModel)
-                {
-                    wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
-                }
-                if(joy->buttons[A_Zone_Button_]==1)
-                {
-                    ROS_INFO("Move to firezoneA !");
-                    TargetZone_[0] = FireZoneA_[0];
-                    TargetZone_[1] = FireZoneA_[1];
-                    TargetZone_[2] = FireZoneA_[2];
-                }
-                else if(joy->buttons[B_Zone_Button_]==1)
-                {
-                    ROS_INFO("Move to firezoneB !");
-                    TargetZone_[0] = FireZoneB_[0];
-                    TargetZone_[1] = FireZoneB_[1];
-                    TargetZone_[2] = FireZoneB_[2];
-                }
-                else if(joy->buttons[C_Zone_Button_]==1)
-                {
-                    ROS_INFO("Move to firezoneC !");
-                    TargetZone_[0] = FireZoneC_[0];
-                    TargetZone_[1] = FireZoneC_[1];
-                    TargetZone_[2] = FireZoneC_[2];
-                }
-                if((TargetZone_[0] == LivoxZone_[0])&&(TargetZone_[1] == LivoxZone_[1]))
-                {
-                    protectFlag=false;
-                }
-                else if((TargetZone_[0] == StartMoveZone_[0])&&(StartMoveZone_[1] == StartMoveZone_[1]))
-                {
-                    protectFlag=false;
-                }
-                else{
-                    protectFlag=true;
-                }
-                // std::cout<<"Start point x = "<<StartZone_[0]<<"y = "<<StartZone_[1]<<"z = "<<StartZone_[2]<<std::endl;
-                std::cout<<"Start point x = "<<LivoxZone_[0]<<"y = "<<LivoxZone_[1]<<"z = "<<LivoxZone_[2]<<std::endl;
-                std::cout<<"Final target x = "<<TargetZone_[0]<<"y = "<<TargetZone_[1]<<"z = "<<TargetZone_[2]<<std::endl;
-                if(protectFlag==true)
-                {
-                    wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
-                    if(StartState == StartZoneModel)
-                    {
-                        wPs = makePlan(StartMoveZone_,TargetZone_);
-                    }
-                    else if(StartState == LivoxZoneModel)
-                    {
-                        wPs = makePlan(LivoxZone_,TargetZone_);
-                    }
+                    wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                    wPs = makePlan(StartMoveZone_,PickupZoneA_);
                     gogogo();
                     for(int popTemp = 0;popTemp<wPs.size();popTemp++)
                     {
                         std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
                         wPs.erase(k);//删除第一个元素
                     }
-                    StartMoveZone_[0] = TargetZone_[0];
-                    StartMoveZone_[1] = TargetZone_[1];
-                    StartMoveZone_[2] = TargetZone_[2];
-                    protectFlag=true;
+                    StartMoveZone_[0] = PickupZoneA_[0];
+                    StartMoveZone_[1] = PickupZoneA_[1];
+                    StartMoveZone_[2] = PickupZoneA_[2];
+                    FirstMove = false;
+                    SecondMove = true;
                 }
-                else{
-                    ROS_WARN("You can not set the same TargetZone !");
+                else if(FirstMove==false&&PickupAgain==true)
+                {
+                    ROS_INFO("Move to pickup zoneB !");
+                    wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    wPs.emplace_back(PickupZoneB_[0],PickupZoneB_[1],PickupZoneB_[2]);
+                    wPs = makePlan(StartMoveZone_,PickupZoneB_);
+                    gogogo();
+                    for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                    StartMoveZone_[0] = PickupZoneB_[0];
+                    StartMoveZone_[1] = PickupZoneB_[1];
+                    StartMoveZone_[2] = PickupZoneB_[2];
+                    PickupAgain=false;
+                    // traj_time_count++;
                 }
-            }    
+                else if(FirstMove==false&&PickupAgain==false)
+                {
+                    traj_time_count++;
+                    if(traj_time_count==10)
+                    {
+                        PickupAgain = true;
+                    }
+                    else{PickupAgain = false;}
+                    ROS_INFO("joy start fire model");
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    }
+                    else if(StartState == LivoxZoneModel)
+                    {
+                        wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                    }
+                    if(joy->buttons[A_Zone_Button_]==1)
+                    {
+                        ROS_INFO("Move to firezoneA !");
+                        TargetZone_[0] = FireZoneA_[0];
+                        TargetZone_[1] = FireZoneA_[1];
+                        TargetZone_[2] = FireZoneA_[2];
+                    }
+                    else if(joy->buttons[B_Zone_Button_]==1)
+                    {
+                        ROS_INFO("Move to firezoneB !");
+                        TargetZone_[0] = FireZoneB_[0];
+                        TargetZone_[1] = FireZoneB_[1];
+                        TargetZone_[2] = FireZoneB_[2];
+                    }
+                    else if(joy->buttons[C_Zone_Button_]==1)
+                    {
+                        ROS_INFO("Move to firezoneC !");
+                        TargetZone_[0] = FireZoneC_[0];
+                        TargetZone_[1] = FireZoneC_[1];
+                        TargetZone_[2] = FireZoneC_[2];
+                    }
+                    if((TargetZone_[0] == LivoxZone_[0])&&(TargetZone_[1] == LivoxZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else if((TargetZone_[0] == StartMoveZone_[0])&&(TargetZone_[1] == StartMoveZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else{
+                        protectFlag=true;
+                    }
+                    std::cout<<"Start point x = "<<StartMoveZone_[0]<<"y = "<<StartMoveZone_[1]<<"z = "<<StartMoveZone_[2]<<std::endl;
+                    // std::cout<<"Start point x = "<<LivoxZone_[0]<<"y = "<<LivoxZone_[1]<<"z = "<<LivoxZone_[2]<<std::endl;
+                    std::cout<<"Final target x = "<<TargetZone_[0]<<"y = "<<TargetZone_[1]<<"z = "<<TargetZone_[2]<<std::endl;
+                    if(protectFlag==true)
+                    {
+                        wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
+                        if(StartState == StartZoneModel)
+                        {
+                            wPs = makePlan(StartMoveZone_,TargetZone_);
+                        }
+                        else if(StartState == LivoxZoneModel)
+                        {
+                            wPs = makePlan(LivoxZone_,TargetZone_);
+                        }
+                        gogogo();
+                        for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                        {
+                            std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                            wPs.erase(k);//删除第一个元素
+                        }
+                        StartMoveZone_[0] = TargetZone_[0];
+                        StartMoveZone_[1] = TargetZone_[1];
+                        StartMoveZone_[2] = TargetZone_[2];
+                        protectFlag=true;
+                    }
+                    else{
+                        ROS_WARN("You can not set the same TargetZone !");
+                    }
+                    if(SecondMove==true)
+                    {
+                        FirstDecision = true;  
+                        StartFireZone_ =  StartMoveZone_;
+                        SecondMove = false;
+                        decisionFlag=true;
+                    }
+                    else{FirstDecision = false; }
+                }    
+            }
             else if(joy->buttons[hang_Button_]==1)
             {
                 ROS_INFO("joy stop mdoel");
             }
             break;
-        }
-          
+        } 
         default:
             break;
-        }
-   
+    }
 }
 
 void TrajPlan_3D::get_target()
 {
-    if(FirstDecision==1)
+    if(FirstDecision==true)
     {
+        // ROS_INFO("test---------------------------------------------");
         if(StartFireZone_ == FireZoneA_){StartZone_Index = 0;}
         else if(StartFireZone_ == FireZoneB_){StartZone_Index = 1;}
         else if(StartFireZone_ == FireZoneC_){StartZone_Index = 2;}
+        // std::cout<<StartZone_Index<<std::endl;
     }
     else StartZone_Index = TargetZone_Index;
     float max = CompletePointTimeRate_[0][0];
@@ -848,7 +912,7 @@ void TrajPlan_3D::get_target()
             }
         }
     }
-    FirstDecision = 0;
+    FirstDecision = false;
     traj_nh_.setParam("traj_plan_3D/auto_decesion/TargetPillar",TargetPillar_Index);
 }
 
@@ -866,9 +930,9 @@ void TrajPlan_3D::auto_decision(const ros::TimerEvent&)
     {
         pillar_detect();
         get_target();
-        std::cout<<"main transfer"<<std::endl;
+        // std::cout<<"main transfer"<<std::endl;
     }
-    ROS_INFO("pass time : %f",pass_time.toSec()); 
+    // ROS_INFO("pass time : %f",pass_time.toSec()); 
 }
 
 int main(int argc,char **argv)
