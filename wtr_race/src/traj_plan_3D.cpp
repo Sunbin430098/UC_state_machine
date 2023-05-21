@@ -525,11 +525,6 @@ TrajPlan_3D::TrajPlan_3D()
                 StartFireZone_[i] = StartFireZone_[i]-chasis2map_dxyz[i];
                 StartMoveZone_[i] = StartMoveZone_[i]-chasis2map_dxyz[i];
             }
-            //plus----------------addLivoxOdom----------------------------
-            traj_nh_.getParam("fastlio_mapping/livox_odom_x",LivoxZone_[0]);
-            traj_nh_.getParam("fastlio_mapping/livox_odom_y",LivoxZone_[1]);
-            traj_nh_.getParam("fastlio_mapping/livox_odom_z",LivoxZone_[2]);
-            traj_nh_.getParam("fastlio_mapping/livox_odom_w",livox_odom_w);
             break;     
         }
         default:
@@ -740,9 +735,23 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 if(FirstMove==true)
                 {
                     ROS_INFO("Move to pickup zoneA !");
-                    wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
-                    wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
-                    wPs = makePlan(StartMoveZone_,PickupZoneA_);
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        wPs = makePlan(StartMoveZone_,PickupZoneA_);
+                    }
+                    else if(StartState == LivoxZoneModel)
+                    {
+                        //plus----------------addLivoxOdom----------------------------
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_x",LivoxZone_[0]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_y",LivoxZone_[1]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_z",LivoxZone_[2]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_w",livox_odom_w);
+                        wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        wPs = makePlan(LivoxZone_,LivoxZone_);
+                    } 
                     gogogo();
                     for(int popTemp = 0;popTemp<wPs.size();popTemp++)
                     {
@@ -786,10 +795,10 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     {
                         wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
                     }
-                    else if(StartState == LivoxZoneModel)
-                    {
-                        wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
-                    }
+                    // else if(StartState == LivoxZoneModel)
+                    // {
+                    //     wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                    // }
                     if(joy->buttons[A_Zone_Button_]==1)
                     {
                         ROS_INFO("Move to firezoneA !");
@@ -832,10 +841,10 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                         {
                             wPs = makePlan(StartMoveZone_,TargetZone_);
                         }
-                        else if(StartState == LivoxZoneModel)
-                        {
-                            wPs = makePlan(LivoxZone_,TargetZone_);
-                        }
+                        // else if(StartState == LivoxZoneModel)
+                        // {
+                        //     wPs = makePlan(LivoxZone_,TargetZone_);
+                        // }
                         gogogo();
                         for(int popTemp = 0;popTemp<wPs.size();popTemp++)
                         {

@@ -241,21 +241,58 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
             }
             else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar==i))
             {
-                int camera_call_lidar = 0;
-                ROS_INFO("Add visual judgement");//参数服务器链接python视觉模块
+                // int camera_call_lidar = 0;
+                ROS_INFO("Add visual judgement");
                 my_livox_nh.setParam("lidar_ask_camera",1);
-                my_livox_nh.setParam("lidar_ask_camera_x",PillarLocation[i][0]);
-                my_livox_nh.setParam("lidar_ask_camera_y",PillarLocation[i][1]);
-                my_livox_nh.setParam("lidar_ask_camera_z",PillarLocation[i][2]);
-                my_livox_nh.getParam("/call_lidar",camera_call_lidar);
-                if(camera_call_lidar==1)//自己队伍颜色
+                // my_livox_nh.setParam("lidar_ask_camera_x",PillarLocation[i][0]);
+                // my_livox_nh.setParam("lidar_ask_camera_y",PillarLocation[i][1]);
+                // my_livox_nh.setParam("lidar_ask_camera_z",PillarLocation[i][2]);
+                // my_livox_nh.getParam("/call_lidar",camera_call_lidar);
+                switch (i)
                 {
-                    OverallSituation[i] = 1;
+                case 1:
+                    my_livox_nh.getParam("/mavros/speed_control/A1",visual_detect);
+                    break;
+                case 2:
+                    my_livox_nh.getParam("/mavros/speed_control/A2",visual_detect);
+                    break;
+                case 3:
+                    my_livox_nh.getParam("/mavros/speed_control/A3",visual_detect);
+                    break;
+                case 4:
+                    my_livox_nh.getParam("/mavros/speed_control/B1",visual_detect);
+                    break;
+                case 5:
+                    my_livox_nh.getParam("/mavros/speed_control/B2",visual_detect);
+                    break;
+                case 6:
+                    my_livox_nh.getParam("/mavros/speed_control/B3",visual_detect);
+                    break;
+                case 7:
+                    my_livox_nh.getParam("/mavros/speed_control/C1",visual_detect);
+                    break;
+                case 8:
+                    my_livox_nh.getParam("/mavros/speed_control/C2",visual_detect);
+                    break;
+                case 9:
+                    my_livox_nh.getParam("/mavros/speed_control/C3",visual_detect);
+                    break;
+                case 10:
+                    my_livox_nh.getParam("/mavros/speed_control/C4",visual_detect);
+                    break;
+                case 11:
+                    my_livox_nh.getParam("/mavros/speed_control/D1",visual_detect);
+                    break;
+                default:
+                    break;
                 }
-                else{OverallSituation[i] = 2;}
+                if(visual_detect==1)//对方队伍颜色
+                {
+                    OverallSituation[i] = 2;
+                }
+                else{OverallSituation[i] = 1;}
             } 
         }
-        // my_livox_nh.setParam("lidar_ask_camera",1);
         my_livox_nh.setParam("decay_map/OverallSituation",OverallSituation);
         LastPointSizeArray = NowPointSizeArray;
     }

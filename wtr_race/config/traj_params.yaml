@@ -69,18 +69,18 @@ PointArray_:                 [3,3,4,4]    #每个区段的点数(能力有限，
 MaxParts_:                       4        #此值小于等于PointArray_元素个数即可
 
 #process5(based on process4，主要用于RR,扫出地图之后结合添加避障功能)
+#ER和RR区域调整
 #射环区                     
 FireZoneA:                     [1.5,5.5,0]
 FireZoneB:                     [5.0,-5.5,0]
 FireZoneC:                     [1.5,2,0]
 StartFireZone:                     [1.5,5.5,0]
 StartMoveZone:                    [0.5,0.5,0]
+#取环区
 PichUpZoneA:                       [0.5,5.5,0]
 PickUpZoneB:                       [0.5,-5.5,0]
 expand_factor:                      2     #一倍膨胀对应5个像素
 point_pace:                         20    
-
-#取环区(待添加)
 
 #自主决策，依赖视觉.先简单决策应该射哪一个环，能实现的话考虑通过哪种方式获胜(见文档,参数后续添加)
 auto_decesion:
@@ -153,4 +153,20 @@ auto_decesion:
                             0,0,0,
                             0,0,0,0,
                             0]
-
+# #是否被对方占领
+# isOppositeOccupied:
+#       #己方一型
+#       A1:                     0
+#       A2:                     0  
+#       A3:                     0    
+#       #对方一型
+#       B1:                     0 
+#       B2:                     0
+#       B3:                     0
+#       #二型
+#       C1:                     0
+#       C2:                     0
+#       C3:                     0
+#       C4:                     0
+#       #三型
+#       D1:                      0

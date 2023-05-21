@@ -5,8 +5,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-// #include "mavlink/v2.0/common/mavlink_msg_posture.h"
-// #include "mavlink/v2.0/common/mavlink_msg_control.h"
 #include "mavlink/v2.0/common/mavlink_msg_posture.hpp"
 #include "mavlink/v2.0/common/mavlink_msg_control.hpp"
 #include "mavros_msgs/wtr_control.h"
@@ -63,24 +61,24 @@ private:
 	 * 
 	 * @attention common::msg::SPEED_CONTROL_STATUS为自动生成的消息头文件中所定义的，也是依据此来解析收到的mavlink消息
 	 * @param msg 
-	 * @param speed_control 
+	 * @param posture_state 
 	 */
 	
-	void handle_speed_control(const mavlink::mavlink_message_t *msg, mavlink::common::msg::CONTROL &speed_control)
+	void handle_speed_control(const mavlink::mavlink_message_t *msg, mavlink::common::msg::POSTURE &posture_state)
 	{
-		auto speed_control_msg = boost::make_shared<mavros_msgs::wtr_control>();
-		// speed_control_msg->header.stamp = ros::Time::now(); 
-		speed_control_msg->vx_set = speed_control.vx_set;
-		speed_control_msg->vy_set = speed_control.vy_set;
-		speed_control_msg->vx_set = speed_control.vw_set;
+		auto posture_state_msg = boost::make_shared<mavros_msgs::wtr_posture>();
 
-		// control_pub.publish(speed_control_msg);
-		//posture
-		// auto mavros_msg_posture = boost::make_shared<mavros_msgs::Posture>();
-		// mavros_msg_posture->header.stamp = ros::Time::now();
-		// mavros_msg_posture->pos_x_state = mavlink_posture.
-		// mavros_msg_posture -> 
-
+		speed_control_nh.setParam("A1",posture_state.A1);
+		speed_control_nh.setParam("A2",posture_state.A2);
+		speed_control_nh.setParam("A3",posture_state.A3);
+		speed_control_nh.setParam("B1",posture_state.B1);
+		speed_control_nh.setParam("B2",posture_state.B2);
+		speed_control_nh.setParam("B3",posture_state.B3);		
+		speed_control_nh.setParam("C1",posture_state.C1);
+		speed_control_nh.setParam("C2",posture_state.C2);
+		speed_control_nh.setParam("C3",posture_state.C3);
+		speed_control_nh.setParam("C4",posture_state.C4);
+		speed_control_nh.setParam("D1",posture_state.D1);		
 	}
  
 	/**

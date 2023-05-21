@@ -24,7 +24,7 @@ class LivoxDetect
         int TargetPillar;
         ros::Time start_time;
         float lidar_decay_time;
-
+        int visual_detect;
 };
 
 #endif
