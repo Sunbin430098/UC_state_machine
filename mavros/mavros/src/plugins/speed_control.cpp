@@ -9,6 +9,7 @@
 #include "mavlink/v2.0/common/mavlink_msg_control.hpp"
 #include "mavros_msgs/wtr_control.h"
 #include "mavros_msgs/wtr_posture.h"
+#include "mavros_msgs/wtr_zone.h"
 
 #include "geometry_msgs/Twist.h"
 
@@ -31,8 +32,9 @@ public:
 		// send_subscriber = speed_control_nh.subscribe<mavros_msgs::SpeedControlSet_sub>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
 		send_subscriber = speed_control_nh.subscribe<geometry_msgs::Twist>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
 		
-		pos_publisher = speed_control_nh.advertise<mavros_msgs::wtr_posture>("posture", 10);
-	
+		pos_publisher = speed_control_nh.advertise<mavros_msgs::wtr_posture>("wtr_posture", 10);
+		zone_publisher = speed_control_nh.advertise<mavros_msgs::wtr_zone>("wtr_zone",10);
+		start_time = ros::Time::now();
 	}
 
     /**
@@ -55,6 +57,9 @@ private:
 	ros::ServiceServer send_service;
 	ros::Subscriber send_subscriber;
 	ros::Publisher pos_publisher;
+	ros::Publisher zone_publisher;
+	ros::Time start_time;
+	int last_point;
  
 	/**
 	 * @brief rx handlers 接收到mavlink包后调用此函数，将mavlink数据包解析为mavros中的自定义消息，并发布到话题
@@ -66,19 +71,50 @@ private:
 	
 	void handle_speed_control(const mavlink::mavlink_message_t *msg, mavlink::common::msg::POSTURE &posture_state)
 	{
+		ros::Time right_now = ros::Time::now();
+    	ros::Duration pass_time = right_now-start_time;
 		auto posture_state_msg = boost::make_shared<mavros_msgs::wtr_posture>();
-
-		speed_control_nh.setParam("A1",posture_state.A1);
-		speed_control_nh.setParam("A2",posture_state.A2);
-		speed_control_nh.setParam("A3",posture_state.A3);
-		speed_control_nh.setParam("B1",posture_state.B1);
-		speed_control_nh.setParam("B2",posture_state.B2);
-		speed_control_nh.setParam("B3",posture_state.B3);		
-		speed_control_nh.setParam("C1",posture_state.C1);
-		speed_control_nh.setParam("C2",posture_state.C2);
-		speed_control_nh.setParam("C3",posture_state.C3);
-		speed_control_nh.setParam("C4",posture_state.C4);
-		speed_control_nh.setParam("D1",posture_state.D1);		
+		auto zone_msg = boost::make_shared<mavros_msgs::wtr_zone>();
+		posture_state_msg->pos_x = posture_state.pos_x;
+		posture_state_msg->pos_y = posture_state.pos_y;
+		posture_state_msg->point = posture_state.point;
+		// std::cout<<posture_state_msg->pos_x<<std::endl;
+		// std::cout<<posture_state_msg->pos_y<<std::endl;
+		// std::cout<<posture_state_msg->point<<std::endl;
+		// posture_state_msg->A1 = posture_state.A1;
+		// posture_state_msg->A2 = posture_state.A2;
+		// posture_state_msg->A3 = posture_state.A3;
+		// posture_state_msg->B1 = posture_state.B1;
+		// posture_state_msg->B2 = posture_state.B2;
+		// posture_state_msg->B3 = posture_state.B3;
+		// posture_state_msg->C1 = posture_state.C1;
+		// posture_state_msg->C2 = posture_state.C2;
+		// posture_state_msg->C3 = posture_state.C3;
+		// posture_state_msg->C4 = posture_state.C4;
+		// posture_state_msg->D1 = posture_state.D1;
+		pos_publisher.publish(posture_state_msg);
+		if(last_point!=posture_state.point&&pass_time.toSec()>1)
+		{
+			zone_msg->point = posture_state.point;
+			zone_publisher.publish(zone_msg);
+		}
+		else
+		{
+			zone_msg->point = -1;
+			zone_publisher.publish(zone_msg);
+		}
+	    last_point = posture_state.point;
+		// speed_control_nh.setParam("A1",posture_state.A1);
+		// speed_control_nh.setParam("A2",posture_state.A2);
+		// speed_control_nh.setParam("A3",posture_state.A3);
+		// speed_control_nh.setParam("B1",posture_state.B1);
+		// speed_control_nh.setParam("B2",posture_state.B2);
+		// speed_control_nh.setParam("B3",posture_state.B3);		
+		// speed_control_nh.setParam("C1",posture_state.C1);
+		// speed_control_nh.setParam("C2",posture_state.C2);
+		// speed_control_nh.setParam("C3",posture_state.C3);
+		// speed_control_nh.setParam("C4",posture_state.C4);
+		// speed_control_nh.setParam("D1",posture_state.D1);		
 	}
  
 	/**
@@ -112,9 +148,9 @@ private:
 		msg.vw_set = speed_p->angular.z;
 		msg.vy_set = speed_p->linear.y;
 		msg.vx_set = speed_p->linear.x;
-		// msg.vw_set = 1;
-		// msg.vy_set = 2;
-		// msg.vx_set = 3;
+		msg.x_set = 1;
+		msg.y_set = 2;
+		msg.w_set = 3;
 		ROS_INFO("send_callback succcess!");
 		ROS_INFO("vx=%f,vy=%f,vw=%f",msg.vx_set,msg.vy_set,msg.vw_set);
 		UAS_FCU(m_uas)->send_message_ignore_drop(msg);

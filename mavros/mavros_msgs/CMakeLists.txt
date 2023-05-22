@@ -76,6 +76,7 @@ add_message_files(
   SpeedControlSet_sub.msg
   wtr_posture.msg
   wtr_control.msg
+  wtr_zone.msg
 )
 
 add_service_files(

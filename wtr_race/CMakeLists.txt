@@ -69,6 +69,8 @@ set(THIRD_PARTY
 
 add_message_files(
   FILES
+    wtr_posture.msg
+    wtr_zone.msg
 )
 generate_messages(
   DEPENDENCIES
@@ -78,7 +80,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES image_receiver
- CATKIN_DEPENDS roscpp std_msgs message_runtime nav_core pluginlib
+ CATKIN_DEPENDS roscpp std_msgs message_runtime nav_core pluginlib 
 #  DEPENDS system_lib
 )
 

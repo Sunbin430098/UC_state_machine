@@ -170,6 +170,7 @@ vector<int> LastPointSizeArray(PointSizeNumber,0);
 vector<float> lidar2map_dxyz(3,0);
 vector<Eigen::Vector3d>  points;
 vector<int> OverallSituation(PointSizeNumber,0); 
+vector<int> CompareArray(2,0);
 
 // LivoxDetect::LivoxDetect(ros::NodeHandle &n): my_livox_nh("~")
 LivoxDetect::LivoxDetect(ros::NodeHandle &n)
@@ -199,6 +200,7 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
     ros::Duration pass_time = right_now-start_time;
     if(pass_time.toSec()>lidar_decay_time)
     {
+        update_count++;
         //注意其他命名空间下的全局名字前加/
         my_livox_nh.getParam("/traj_plan_3D/auto_decesion/TargetPillar",TargetPillar);
         vector<double> TempPillarLocation(3*PointSizeNumber,0);
@@ -226,20 +228,27 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
         }
         for(int i=0;i<PointSizeNumber;i++)
         {
-            std::cout<<NowPointSizeArray[i]<<std::endl;
-            std::cout<<LastPointSizeArray[i]<<std::endl;
-            std::cout<<(NowPointSizeArray[i]-LastPointSizeArray[i])<<std::endl;
+       
             if((NowPointSizeArray[i]-LastPointSizeArray[i]) < ThreshholdPoints)//初始柱子为空
             {
-                ROS_INFO("No loop add");
+                if(i==0)
+                {
+                    std::cout<<NowPointSizeArray[i]<<std::endl;
+                    std::cout<<LastPointSizeArray[i]<<std::endl;
+                    std::cout<<(NowPointSizeArray[i]-LastPointSizeArray[i])<<std::endl;
+                    ROS_INFO("No loop add");
+                }
                 OverallSituation[i] = 0;
             }
-            else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar!=i))//对方射中
+            else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar!=i)&&pass_time.toSec()>(lidar_decay_time+2))//对方射中
             {
-                ROS_INFO("Opposite shot");
-                OverallSituation[i] = 2;
+                if(i==0)
+                {
+                    CompareArray[0] = LastPointSizeArray[i];
+                    CompareArray[1] = NowPointSizeArray[i];
+                }
             }
-            else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar==i))
+            else if(((NowPointSizeArray[i]-LastPointSizeArray[i]) > ThreshholdPoints)&& (TargetPillar==i)&&pass_time.toSec()>(lidar_decay_time+2))
             {
                 // int camera_call_lidar = 0;
                 ROS_INFO("Add visual judgement");
@@ -291,10 +300,18 @@ void LivoxDetect::lidarCallback(const ros::TimerEvent&)
                     OverallSituation[i] = 2;
                 }
                 else{OverallSituation[i] = 1;}
+            }
+            if(CompareArray[1]-CompareArray[0]>ThreshholdPoints&&i==0)
+            {
+                ROS_INFO("Opposite shot");
+                OverallSituation[i] = 2;
             } 
         }
         my_livox_nh.setParam("decay_map/OverallSituation",OverallSituation);
-        LastPointSizeArray = NowPointSizeArray;
+        if(update_count%3==0){
+            update_count = 0;
+            LastPointSizeArray = NowPointSizeArray;
+        }
     }
     // return OverallSituation;
 }

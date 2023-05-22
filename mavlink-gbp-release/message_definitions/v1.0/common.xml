@@ -7362,7 +7362,7 @@
         <field type="float" name="yangle">俯仰角</field>
         <field type="float" name="w_z">航向角速度</field>
         <field type="int32_t" name="point">目标点</field>
-        <field type="int32_t" name="A1">A1</field>
+        <!-- <field type="int32_t" name="A1">A1</field>
         <field type="int32_t" name="A2">A2</field>
         <field type="int32_t" name="A3">A3</field>
         <field type="int32_t" name="B1">B1</field>
@@ -7372,7 +7372,7 @@
         <field type="int32_t" name="C2">C2</field>
         <field type="int32_t" name="C3">C3</field>
         <field type="int32_t" name="C4">C4</field>
-        <field type="int32_t" name="D1">D1</field>
+        <field type="int32_t" name="D1">D1</field> -->
     </message>
     <!-- <message id="9" name="CONTROL_SET">
     <description>接收来自上位机的消息</description>
