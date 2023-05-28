@@ -19,9 +19,12 @@
 #include "geometry_msgs/PointStamped.h"
 
 #include "astar/astar.h"
-#include "wtr_race/wtr_posture.h"
-#include "wtr_race/wtr_zone.h"
-// #include 
+#include "wtr_mavros_msgs/wtr_posture.h"
+#include "wtr_mavros_msgs/wtr_zone.h"
+#include "wtr_mavros_msgs/wtr_control.h"
+#include "wtr_fake_mavros/read_from_stm32.h"
+#include "wtr_fake_mavros/write_to_stm32.h"
+
 // #include "livox_lidar/livox_lidar.h"
 
 std_msgs::Float32 msg;
@@ -92,6 +95,13 @@ typedef enum{
     LivoxZoneModel //任意一点转移到射环区
 }StateControl;
 StateControl StartState = StartZoneModel;
+
+typedef enum{
+    UpJoyMavlinkState = 0,
+    DownJoyMavlinkState,
+    DownSerialState
+}CommunicateState;
+CommunicateState Communicate =  DownSerialState;
 
 typedef enum{
     process1 = 0 ,
@@ -337,9 +347,10 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         TrajPlan_3D();
         void pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg);
         void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
-        // void mavrosZoneCallback(const wtr_race::wtr_zone::ConstPtr& mavros_zone_msg);
+        void mavrosZoneCallback(const mavros_msgs::wtr_zone::ConstPtr& mavros_zone_msg);
+        void fakemavrosCallback(const fake_mavros::read_from_stm32::ConstPtr& fake_mavros_msg);
         // void mavrosCallback(const wtr_race::wtr_posture::ConstPtr& mavros_posture_msg);
-        void sim_odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
+        // void sim_odomCallback(const nav_msgs::Odometry::ConstPtr& odom);
         void map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg);
         void gogogo();
         void auto_decision(const ros::TimerEvent&);
@@ -350,10 +361,10 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         ros::Subscriber point_sub;
         ros::Subscriber joy_sub;
         ros::Subscriber pos_sub;
+        ros::Subscriber fake_pos_sub;
         
         Trajectory traj;
         std::vector<Eigen::Vector3d> wPs;
-        // void motion_plan_callback(const ros::TimerEvent &e);
 
         int ConfigProcessModel;
         //process1---------
@@ -380,8 +391,10 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
         //mavros simulator communication-----------
         ros::Publisher motion_pub;  
         ros::Publisher sim_motion_pub;
-            // mavros_msgs::Speed motion_msg;
-        geometry_msgs::Twist motion_msg;
+        ros::Publisher fake_motion_pub;
+        // mavros_msgs::Speed motion_msg;
+        mavros_msgs::wtr_control motion_msg;
+        fake_mavros::write_to_stm32 fake_motion_msg;
 
         ros::Subscriber odom_sub; 
         tf::TransformBroadcaster odom_link_broadcaster; 
@@ -400,8 +413,6 @@ class TrajPlan_3D : public Astar_planner::AstarPlannerROS
 
 TrajPlan_3D::TrajPlan_3D()
 {
-    // ros::NodeHandle my_livox_nh("~");
-    // LivoxDetect livoxdetect(my_livox_nh);
     // pub1 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_front_Joint/vel_cmd",10);
     // pub2 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_left_Joint/vel_cmd",10);
     // pub3 = nh_.advertise<std_msgs::Float32>("/Dipan/assembly/Empty_right_Joint/vel_cmd",10);
@@ -409,12 +420,15 @@ TrajPlan_3D::TrajPlan_3D()
     msg.data = 60;
     point_count = 1;
     point_sub = traj_nh_.subscribe<geometry_msgs::PoseStamped>("/goal",10,&TrajPlan_3D::pointCallBack,this);
-    motion_pub = traj_nh_.advertise<geometry_msgs::Twist>("/mavros/speed_control/send_topic",10);
+    motion_pub = traj_nh_.advertise<mavros_msgs::wtr_control>("/mavros/speed_control/send_topic",10);
     sim_motion_pub = traj_nh_.advertise<geometry_msgs::Twist>("/cmd_vel",10);
+    fake_motion_pub = traj_nh_.advertise<fake_mavros::write_to_stm32>("/fake_mavros/speed_control",10);
     joy_sub = traj_nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TrajPlan_3D::joyCallback, this);
     // pos_sub = traj_nh_.subscribe<wtr_race::wtr_posture>("/mavros/speed_control/wtr_posture",10,&TrajPlan_3D::mavrosCallback,this);
-    // pos_sub = traj_nh_.subscribe<wtr_race::wtr_zone>("/mavros/speed_control/wtr_zone",10,&TrajPlan_3D::mavrosZoneCallback,this);
-    odom_sub = traj_nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
+    pos_sub = traj_nh_.subscribe<mavros_msgs::wtr_zone>("/mavros/speed_control/wtr_zone",10,&TrajPlan_3D::mavrosZoneCallback,this);
+    fake_pos_sub = traj_nh_.subscribe<fake_mavros::read_from_stm32>("/fake_mavros/joy_control",10,&TrajPlan_3D::fakemavrosCallback,this);
+    
+    // odom_sub = traj_nh_.subscribe<nav_msgs::Odometry>("/wtr_robot_odom",10,&TrajPlan_3D::sim_odomCallback,this);
     map_sub = traj_nh_.subscribe<nav_msgs::OccupancyGrid>("map", 10, &TrajPlan_3D::map_callback,this);
     timer = traj_nh_.createTimer(ros::Duration(1), &TrajPlan_3D::auto_decision,this);
     traj_nh_.getParam("traj_plan_3D/auto_decesion/LidarPart/LidarDecayTime",lidar_decay_time);
@@ -558,25 +572,41 @@ void TrajPlan_3D::gogogo()
         viz.visualize(traj, wPs, 0);
         ros::Duration time_diff = ros::Time::now() - begin;
         //实际x为0,y为1
-        motion_msg.linear.x = traj.getVel(time_diff.toSec())(0);
-        motion_msg.linear.y = traj.getVel(time_diff.toSec())(1);
+        motion_msg.vx_set = traj.getVel(time_diff.toSec())(0);
+        motion_msg.vy_set = traj.getVel(time_diff.toSec())(1);
+        motion_msg.x_set =  traj.getPos(time_diff.toSec())(0);
+        motion_msg.y_set =  traj.getPos(time_diff.toSec())(1);
+
+        fake_motion_msg.vx_set = traj.getVel(time_diff.toSec())(0);
+        fake_motion_msg.vy_set = traj.getVel(time_diff.toSec())(1);
+        fake_motion_msg.x_set =  traj.getPos(time_diff.toSec())(0);
+        fake_motion_msg.y_set =  traj.getPos(time_diff.toSec())(1); 
         if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()< traj.getTotalDuration()+0.15)
         {
-            motion_msg.linear.x = 0;
-            motion_msg.linear.y = 0;
-            motion_msg.angular.z = 0;
+
+            motion_msg.vx_set = 0;
+            motion_msg.vy_set = 0;
+            motion_msg.vw_set = 0;
+            fake_motion_msg.vx_set = 0;
+            fake_motion_msg.vy_set = 0;
+            fake_motion_msg.vw_set = 0;
         }
         else if(time_diff.toSec()>traj.getTotalDuration() && time_diff.toSec()> traj.getTotalDuration()+0.15)
         {
-            motion_msg.linear.x = 0;
-            motion_msg.linear.y = 0;
-            motion_msg.angular.z = 0;
+            motion_msg.vx_set = 0;
+            motion_msg.vy_set = 0;
+            motion_msg.vw_set = 0;
+            fake_motion_msg.vx_set = 0;
+            fake_motion_msg.vy_set = 0;
+            fake_motion_msg.vw_set = 0;
             ROS_WARN("Stop!!!!");
             point_count = refresh;
             break;
         }
         motion_pub.publish(motion_msg);
-        ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
+        fake_motion_pub.publish(fake_motion_msg);
+        // ROS_INFO("time = %f,vx = %f,vy = %f",time_diff.toSec(), motion_msg.linear.x, motion_msg.linear.y);
+        ROS_INFO("time = %f,vx = %f,vy = %f,x=%f,y=%f",time_diff.toSec(), motion_msg.vx_set, motion_msg.vy_set,motion_msg.x_set,motion_msg.y_set);
         rate.sleep();
     }
 }
@@ -589,19 +619,19 @@ void TrajPlan_3D::map_callback(const nav_msgs::OccupancyGrid::ConstPtr &map_msg)
     }
 }    
 
-void TrajPlan_3D::sim_odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
-{
-    ros::Time current_time = ros::Time::now();
-    geometry_msgs::TransformStamped odom_world_trans;
-    odom_world_trans.header.stamp = current_time;
-    odom_world_trans.header.frame_id = "world";
-    odom_world_trans.child_frame_id = "base_footprint";
-    odom_world_trans.transform.translation.x = odom->pose.pose.position.x;
-    odom_world_trans.transform.translation.y = odom->pose.pose.position.y;
-    odom_world_trans.transform.translation.z = 0;
-    odom_world_trans.transform.rotation = odom->pose.pose.orientation;
-    odom_world_broadcaster.sendTransform(odom_world_trans);
-}
+// void TrajPlan_3D::sim_odomCallback(const nav_msgs::Odometry::ConstPtr &odom)
+// {
+//     ros::Time current_time = ros::Time::now();
+//     geometry_msgs::TransformStamped odom_world_trans;
+//     odom_world_trans.header.stamp = current_time;
+//     odom_world_trans.header.frame_id = "world";
+//     odom_world_trans.child_frame_id = "base_footprint";
+//     odom_world_trans.transform.translation.x = odom->pose.pose.position.x;
+//     odom_world_trans.transform.translation.y = odom->pose.pose.position.y;
+//     odom_world_trans.transform.translation.z = 0;
+//     odom_world_trans.transform.rotation = odom->pose.pose.orientation;
+//     odom_world_broadcaster.sendTransform(odom_world_trans);
+// }
 
 void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &point_msg)
 {
@@ -675,77 +705,232 @@ void TrajPlan_3D::pointCallBack(const geometry_msgs::PoseStamped::ConstPtr &poin
 }
 
 
-// void TrajPlan_3D::mavrosZoneCallback(const wtr_race::wtr_zone::ConstPtr& mavros_zone_msg)
+void TrajPlan_3D::mavrosZoneCallback(const mavros_msgs::wtr_zone::ConstPtr& mavros_zone_msg)
+{
+    switch (ProcessModel)
+    {
+        case process5:
+        {
+            if(mavros_zone_msg->point != -1)
+            {
+                if(FirstMove==true)
+                {
+                    ROS_INFO("Move to pickup zoneA !");
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        // wPs = makePlan(StartMoveZone_,PickupZoneA_);
+                    }
+                    else if(StartState == LivoxZoneModel)
+                    {
+                        //plus----------------addLivoxOdom----------------------------
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_x",LivoxZone_[0]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_y",LivoxZone_[1]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_z",LivoxZone_[2]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_w",livox_odom_w);
+                        wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        // wPs = makePlan(LivoxZone_,LivoxZone_);
+                    } 
+                    gogogo();
+                    for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                    StartMoveZone_[0] = PickupZoneA_[0];
+                    StartMoveZone_[1] = PickupZoneA_[1];
+                    StartMoveZone_[2] = PickupZoneA_[2];
+                    FirstMove = false;
+                    SecondMove = true;
+                }
+                else if(FirstMove==false&&PickupAgain==true)
+                {
+                    ROS_INFO("Move to pickup zoneB !");
+                    wPs.clear();
+                    wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    wPs.emplace_back(PickupZoneB_[0],PickupZoneB_[1],PickupZoneB_[2]);
+                    // wPs = makePlan(StartMoveZone_,PickupZoneB_);
+                    gogogo();
+                    for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                    StartMoveZone_[0] = PickupZoneB_[0];
+                    StartMoveZone_[1] = PickupZoneB_[1];
+                    StartMoveZone_[2] = PickupZoneB_[2];
+                    PickupAgain=false;
+                    // traj_time_count++;
+                }
+                else if(FirstMove==false&&PickupAgain==false)
+                {
+                    traj_time_count++;
+                    if(traj_time_count==10)
+                    {
+                        PickupAgain = true;
+                    }
+                    else{PickupAgain = false;}
+                    ROS_INFO("joy start fire model");
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.clear();
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    }
+                    // else if(StartState == LivoxZoneModel)
+                    // {
+                    //     wPs.clear();
+                    //     wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                    // }
+                    // if(joy->buttons[A_Zone_Button_]==1)
+                    if(mavros_zone_msg->point==1)
+                    {
+                        ROS_INFO("Move to firezoneA !");
+                        TargetZone_[0] = FireZoneA_[0];
+                        TargetZone_[1] = FireZoneA_[1];
+                        TargetZone_[2] = FireZoneA_[2];
+                    }
+                    else if(mavros_zone_msg->point==2)
+                    {
+                        ROS_INFO("Move to firezoneB !");
+                        TargetZone_[0] = FireZoneB_[0];
+                        TargetZone_[1] = FireZoneB_[1];
+                        TargetZone_[2] = FireZoneB_[2];
+                    }
+                    else if(mavros_zone_msg->point==3)
+                    {
+                        ROS_INFO("Move to firezoneC !");
+                        TargetZone_[0] = FireZoneC_[0];
+                        TargetZone_[1] = FireZoneC_[1];
+                        TargetZone_[2] = FireZoneC_[2];
+                    }
+                    if((TargetZone_[0] == LivoxZone_[0])&&(TargetZone_[1] == LivoxZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else if((TargetZone_[0] == StartMoveZone_[0])&&(TargetZone_[1] == StartMoveZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else{
+                        protectFlag=true;
+                    }
+                    std::cout<<"Start point x = "<<StartMoveZone_[0]<<"y = "<<StartMoveZone_[1]<<"z = "<<StartMoveZone_[2]<<std::endl;
+                    // std::cout<<"Start point x = "<<LivoxZone_[0]<<"y = "<<LivoxZone_[1]<<"z = "<<LivoxZone_[2]<<std::endl;
+                    std::cout<<"Final target x = "<<TargetZone_[0]<<"y = "<<TargetZone_[1]<<"z = "<<TargetZone_[2]<<std::endl;
+                    if(protectFlag==true)
+                    {
+                        wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
+                        if(StartState == StartZoneModel)
+                        {
+                            // wPs = makePlan(StartMoveZone_,TargetZone_);
+                            // std::cout<<"------------------"<<wPs.size()<<std::endl;
+                        }
+                        // else if(StartState == LivoxZoneModel)
+                        // {
+                        //     wPs = makePlan(LivoxZone_,TargetZone_);
+                        // }
+                        gogogo();
+                        for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                        {
+                            std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                            wPs.erase(k);//删除第一个元素
+                        }
+                        StartMoveZone_[0] = TargetZone_[0];
+                        StartMoveZone_[1] = TargetZone_[1];
+                        StartMoveZone_[2] = TargetZone_[2];
+                        protectFlag=true;
+                    }
+                    else{
+                        ROS_WARN("You can not set the same TargetZone !");
+                        traj_time_count--;
+                    }
+                    if(SecondMove==true)
+                    {
+                        FirstDecision = true;  
+                        StartFireZone_ =  StartMoveZone_;
+                        SecondMove = false;
+                        decisionFlag=true;
+                    }
+                    else{FirstDecision = false; }
+                }    
+            }
+            else if(mavros_zone_msg->point==4)
+            {
+                ROS_INFO("joy stop mdoel");
+            }
+            break;
+        } 
+        default:
+            break;
+    }
+}
 void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
     switch (ProcessModel)
     {
-        // case process3:
-        // {
-        //     // if(joy->buttons[A_Zone_Button_]==1)
-        //     if(mavros_zone_msg->point==1)
-        //     {
-        //         ROS_INFO("joy start model");
-        //         for(int i=0;i<maxPointSetNumber/3;i++)
-        //         {
-        //             float x = CoordinatePointSet[i][0];
-        //             float y = CoordinatePointSet[i][1];
-        //             float z = CoordinatePointSet[i][2];
-        //             wPs.emplace_back(x,y,z);
-        //             std::cout<<"Add x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
-        //         }
-        //         gogogo();
-        //     }
-        //     // else if(joy->buttons[hang_Button_]==1&&joy->buttons[A_Zone_Button_]==0)
-        //     else if(mavros_zone_msg->point==4)
-        //     {
-        //         ROS_INFO("joy stop mdoel");
-        //     } 
-        //     break;
-        // }
-        // case process4:
-        // {
-        //     // if(joy->buttons[A_Zone_Button_]==1)
-        //     if(mavros_zone_msg->point==1)
-        //     {
-        //         ROS_INFO("joy start model");
-        //         if(IntervalNumber_>=maxParts_)
-        //         {
-        //             ROS_WARN("too many parts than set");
-        //         }
-        //         else{
-        //             for(int i=0;i<PointNumberArray_[IntervalNumber_];i++)
-        //             {
-        //                 float x = CoordinatePointSet_[IntervalNumber_][i][0];
-        //                 float y = CoordinatePointSet_[IntervalNumber_][i][1];
-        //                 float z = CoordinatePointSet_[IntervalNumber_][i][2];
-        //                 wPs.emplace_back(x,y,z);
-        //                 std::cout<<"Add x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
-        //             }
-        //             gogogo();
-        //             int popTemp;
-        //             if(IntervalNumber_ != start_){popTemp=0;}
-        //             else{popTemp=1;}
-        //             for(;popTemp<PointNumberArray_[IntervalNumber_];popTemp++)
-        //             {
-        //                 std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
-        //                 wPs.erase(k);//删除第一个元素
-        //             }
-        //         }
-        //         IntervalNumber_++;
-        //     }
-        //     // else if(joy->buttons[hang_Button_]==1&&joy->buttons[A_Zone_Button_]==0)
-        //     else if(mavros_zone_msg->point==4)
-        //     {
-        //         ROS_INFO("joy stop mdoel");
-        //     }
-        //     break;
-        // }
+        case process3:
+        {
+            if(joy->buttons[A_Zone_Button_]==1)
+            {
+                ROS_INFO("joy start model");
+                for(int i=0;i<maxPointSetNumber/3;i++)
+                {
+                    float x = CoordinatePointSet[i][0];
+                    float y = CoordinatePointSet[i][1];
+                    float z = CoordinatePointSet[i][2];
+                    wPs.emplace_back(x,y,z);
+                    std::cout<<"Add x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
+                }
+                gogogo();
+            }
+            else if(joy->buttons[hang_Button_]==1&&joy->buttons[A_Zone_Button_]==0)
+            {
+                ROS_INFO("joy stop mdoel");
+            } 
+            break;
+        }
+        case process4:
+        {
+            if(joy->buttons[A_Zone_Button_]==1)
+            {
+                ROS_INFO("joy start model");
+                if(IntervalNumber_>=maxParts_)
+                {
+                    ROS_WARN("too many parts than set");
+                }
+                else{
+                    for(int i=0;i<PointNumberArray_[IntervalNumber_];i++)
+                    {
+                        float x = CoordinatePointSet_[IntervalNumber_][i][0];
+                        float y = CoordinatePointSet_[IntervalNumber_][i][1];
+                        float z = CoordinatePointSet_[IntervalNumber_][i][2];
+                        wPs.emplace_back(x,y,z);
+                        std::cout<<"Add x = "<<x<<"y = "<<y<<"z = "<<z<<std::endl;
+                    }
+                    gogogo();
+                    int popTemp;
+                    if(IntervalNumber_ != start_){popTemp=0;}
+                    else{popTemp=1;}
+                    for(;popTemp<PointNumberArray_[IntervalNumber_];popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                }
+                IntervalNumber_++;
+            }
+            else if(joy->buttons[hang_Button_]==1&&joy->buttons[A_Zone_Button_]==0)
+            {
+                ROS_INFO("joy stop mdoel");
+            }
+            break;
+        }
           
         case process5:
         {
             if(joy->buttons[A_Zone_Button_]==1||joy->buttons[B_Zone_Button_]==1||joy->buttons[C_Zone_Button_]==1)
-            // if(mavros_zone_msg->point != -1)
             {
                 if(FirstMove==true)
                 {
@@ -819,7 +1004,6 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     //     wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
                     // }
                     if(joy->buttons[A_Zone_Button_]==1)
-                    // if(mavros_zone_msg->point==1)
                     {
                         ROS_INFO("Move to firezoneA !");
                         TargetZone_[0] = FireZoneA_[0];
@@ -827,7 +1011,6 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                         TargetZone_[2] = FireZoneA_[2];
                     }
                     else if(joy->buttons[B_Zone_Button_]==1)
-                    // else if(mavros_zone_msg->point==2)
                     {
                         ROS_INFO("Move to firezoneB !");
                         TargetZone_[0] = FireZoneB_[0];
@@ -835,7 +1018,6 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                         TargetZone_[2] = FireZoneB_[2];
                     }
                     else if(joy->buttons[C_Zone_Button_]==1)
-                    // else if(mavros_zone_msg->point==3)
                     {
                         ROS_INFO("Move to firezoneC !");
                         TargetZone_[0] = FireZoneC_[0];
@@ -894,7 +1076,6 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 }    
             }
             else if(joy->buttons[hang_Button_]==1)
-            // else if(mavros_zone_msg->point==4)
             {
                 ROS_INFO("joy stop mdoel");
             }
@@ -904,7 +1085,167 @@ void TrajPlan_3D::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             break;
     }
 }
-
+void TrajPlan_3D::fakemavrosCallback(const fake_mavros::read_from_stm32::ConstPtr& fake_mavros_msg)
+{
+    switch (ProcessModel)
+    {
+        case process5:
+        {
+            if(fake_mavros_msg->point != -1)
+            {
+                if(FirstMove==true)
+                {
+                    ROS_INFO("Move to pickup zoneA !");
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        // wPs = makePlan(StartMoveZone_,PickupZoneA_);
+                    }
+                    else if(StartState == LivoxZoneModel)
+                    {
+                        //plus----------------addLivoxOdom----------------------------
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_x",LivoxZone_[0]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_y",LivoxZone_[1]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_z",LivoxZone_[2]);
+                        traj_nh_.getParam("/fastlio_mapping/livox_odom_w",livox_odom_w);
+                        wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                        wPs.emplace_back(PickupZoneA_[0],PickupZoneA_[1],PickupZoneA_[2]);
+                        // wPs = makePlan(LivoxZone_,LivoxZone_);
+                    } 
+                    gogogo();
+                    for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                    StartMoveZone_[0] = PickupZoneA_[0];
+                    StartMoveZone_[1] = PickupZoneA_[1];
+                    StartMoveZone_[2] = PickupZoneA_[2];
+                    FirstMove = false;
+                    SecondMove = true;
+                }
+                else if(FirstMove==false&&PickupAgain==true)
+                {
+                    ROS_INFO("Move to pickup zoneB !");
+                    wPs.clear();
+                    wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    wPs.emplace_back(PickupZoneB_[0],PickupZoneB_[1],PickupZoneB_[2]);
+                    // wPs = makePlan(StartMoveZone_,PickupZoneB_);
+                    gogogo();
+                    for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                    {
+                        std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                        wPs.erase(k);//删除第一个元素
+                    }
+                    StartMoveZone_[0] = PickupZoneB_[0];
+                    StartMoveZone_[1] = PickupZoneB_[1];
+                    StartMoveZone_[2] = PickupZoneB_[2];
+                    PickupAgain=false;
+                    // traj_time_count++;
+                }
+                else if(FirstMove==false&&PickupAgain==false)
+                {
+                    traj_time_count++;
+                    if(traj_time_count==10)
+                    {
+                        PickupAgain = true;
+                    }
+                    else{PickupAgain = false;}
+                    ROS_INFO("joy start fire model");
+                    if(StartState == StartZoneModel)
+                    {
+                        wPs.clear();
+                        wPs.emplace_back(StartMoveZone_[0],StartMoveZone_[1],StartMoveZone_[2]);
+                    }
+                    // else if(StartState == LivoxZoneModel)
+                    // {
+                    //     wPs.clear();
+                    //     wPs.emplace_back(LivoxZone_[0],LivoxZone_[1],LivoxZone_[2]);
+                    // }
+                    // if(joy->buttons[A_Zone_Button_]==1)
+                    if(fake_mavros_msg->point==1)
+                    {
+                        ROS_INFO("Move to firezoneA !");
+                        TargetZone_[0] = FireZoneA_[0];
+                        TargetZone_[1] = FireZoneA_[1];
+                        TargetZone_[2] = FireZoneA_[2];
+                    }
+                    else if(fake_mavros_msg->point==2)
+                    {
+                        ROS_INFO("Move to firezoneB !");
+                        TargetZone_[0] = FireZoneB_[0];
+                        TargetZone_[1] = FireZoneB_[1];
+                        TargetZone_[2] = FireZoneB_[2];
+                    }
+                    else if(fake_mavros_msg->point==3)
+                    {
+                        ROS_INFO("Move to firezoneC !");
+                        TargetZone_[0] = FireZoneC_[0];
+                        TargetZone_[1] = FireZoneC_[1];
+                        TargetZone_[2] = FireZoneC_[2];
+                    }
+                    if((TargetZone_[0] == LivoxZone_[0])&&(TargetZone_[1] == LivoxZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else if((TargetZone_[0] == StartMoveZone_[0])&&(TargetZone_[1] == StartMoveZone_[1]))
+                    {
+                        protectFlag=false;
+                    }
+                    else{
+                        protectFlag=true;
+                    }
+                    std::cout<<"Start point x = "<<StartMoveZone_[0]<<"y = "<<StartMoveZone_[1]<<"z = "<<StartMoveZone_[2]<<std::endl;
+                    // std::cout<<"Start point x = "<<LivoxZone_[0]<<"y = "<<LivoxZone_[1]<<"z = "<<LivoxZone_[2]<<std::endl;
+                    std::cout<<"Final target x = "<<TargetZone_[0]<<"y = "<<TargetZone_[1]<<"z = "<<TargetZone_[2]<<std::endl;
+                    if(protectFlag==true)
+                    {
+                        wPs.emplace_back(TargetZone_[0],TargetZone_[1],TargetZone_[2]);
+                        if(StartState == StartZoneModel)
+                        {
+                            // wPs = makePlan(StartMoveZone_,TargetZone_);
+                            // std::cout<<"------------------"<<wPs.size()<<std::endl;
+                        }
+                        // else if(StartState == LivoxZoneModel)
+                        // {
+                        //     wPs = makePlan(LivoxZone_,TargetZone_);
+                        // }
+                        gogogo();
+                        for(int popTemp = 0;popTemp<wPs.size();popTemp++)
+                        {
+                            std::vector<Eigen::Vector3d>::iterator k = wPs.begin();
+                            wPs.erase(k);//删除第一个元素
+                        }
+                        StartMoveZone_[0] = TargetZone_[0];
+                        StartMoveZone_[1] = TargetZone_[1];
+                        StartMoveZone_[2] = TargetZone_[2];
+                        protectFlag=true;
+                    }
+                    else{
+                        ROS_WARN("You can not set the same TargetZone !");
+                        traj_time_count--;
+                    }
+                    if(SecondMove==true)
+                    {
+                        FirstDecision = true;  
+                        StartFireZone_ =  StartMoveZone_;
+                        SecondMove = false;
+                        decisionFlag=true;
+                    }
+                    else{FirstDecision = false; }
+                }    
+            }
+            else if(fake_mavros_msg->point==4)
+            {
+                ROS_INFO("joy stop mdoel");
+            }
+            break;
+        } 
+        default:
+            break;
+    }
+}
 
 void TrajPlan_3D::get_target()
 {

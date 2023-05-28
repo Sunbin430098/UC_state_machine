@@ -11,8 +11,7 @@
 #include "mavros_msgs/wtr_posture.h"
 #include "mavros_msgs/wtr_zone.h"
 
-#include "geometry_msgs/Twist.h"
-
+bool first_connect =true;
 
 namespace mavros {
 namespace std_plugins {
@@ -30,7 +29,8 @@ public:
 		control_pub = speed_control_nh.advertise<mavros_msgs::wtr_control>("status", 10);
 		// send_service = speed_control_nh.advertiseService("send", &SpeedControlPlugin::send_cb_service, this);
 		// send_subscriber = speed_control_nh.subscribe<mavros_msgs::SpeedControlSet_sub>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
-		send_subscriber = speed_control_nh.subscribe<geometry_msgs::Twist>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
+		// send_subscriber = speed_control_nh.subscribe<geometry_msgs::Twist>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
+		send_subscriber = speed_control_nh.subscribe<mavros_msgs::wtr_control>("send_topic", 10, &SpeedControlPlugin::send_callback_subscribe, this);
 		
 		pos_publisher = speed_control_nh.advertise<mavros_msgs::wtr_posture>("wtr_posture", 10);
 		zone_publisher = speed_control_nh.advertise<mavros_msgs::wtr_zone>("wtr_zone",10);
@@ -60,6 +60,7 @@ private:
 	ros::Publisher zone_publisher;
 	ros::Time start_time;
 	int last_point;
+	
  
 	/**
 	 * @brief rx handlers 接收到mavlink包后调用此函数，将mavlink数据包解析为mavros中的自定义消息，并发布到话题
@@ -78,9 +79,13 @@ private:
 		posture_state_msg->pos_x = posture_state.pos_x;
 		posture_state_msg->pos_y = posture_state.pos_y;
 		posture_state_msg->point = posture_state.point;
-		// std::cout<<posture_state_msg->pos_x<<std::endl;
-		// std::cout<<posture_state_msg->pos_y<<std::endl;
-		// std::cout<<posture_state_msg->point<<std::endl;
+
+		// ROS_INFO("pos_x=%f",posture_state_msg->pos_x);
+		// ROS_INFO("pos_y=%f",posture_state_msg->pos_y);
+		std::cout<<posture_state_msg->pos_x<<std::endl;
+		std::cout<<posture_state_msg->pos_y<<std::endl;
+		std::cout<<posture_state_msg->point<<std::endl;
+		
 		// posture_state_msg->A1 = posture_state.A1;
 		// posture_state_msg->A2 = posture_state.A2;
 		// posture_state_msg->A3 = posture_state.A3;
@@ -104,6 +109,7 @@ private:
 			zone_publisher.publish(zone_msg);
 		}
 	    last_point = posture_state.point;
+		first_connect = false;
 		// speed_control_nh.setParam("A1",posture_state.A1);
 		// speed_control_nh.setParam("A2",posture_state.A2);
 		// speed_control_nh.setParam("A3",posture_state.A3);
@@ -133,29 +139,26 @@ private:
 	// 	msg.vx_set = req.vx_set;
 	// 	msg.vy_set = req.vy_set;
 	// 	msg.vw_set = req.vw_set;
-		
 	// 	//响应发送成功
 	// 	responce.send_success = true;
-		
 	// 	//调用mavlink消息发送API
 	// 	UAS_FCU(m_uas)->send_message_ignore_drop(msg);
 	// 	return true;
 	// }
-
-	void send_callback_subscribe(const geometry_msgs::Twist::ConstPtr& speed_p)
+	void send_callback_subscribe(const mavros_msgs::wtr_control::ConstPtr& speed_p)
 	{
 		mavlink::common::msg::CONTROL msg;
-		msg.vw_set = speed_p->angular.z;
-		msg.vy_set = speed_p->linear.y;
-		msg.vx_set = speed_p->linear.x;
-		msg.x_set = 1;
-		msg.y_set = 2;
-		msg.w_set = 3;
-		ROS_INFO("send_callback succcess!");
+		msg.vx_set = speed_p->vx_set;
+		msg.vy_set = speed_p->vy_set;
+		msg.vw_set = speed_p->vw_set;
+		msg.x_set = speed_p->x_set;
+		msg.y_set = speed_p->y_set;
+		msg.w_set = 0.0;
+		
 		ROS_INFO("vx=%f,vy=%f,vw=%f",msg.vx_set,msg.vy_set,msg.vw_set);
 		UAS_FCU(m_uas)->send_message_ignore_drop(msg);
+		ROS_INFO("send_callback succcess!");
 	} 
-	
 };
 }	// namespace std_plugins
 }	// namespace mavros

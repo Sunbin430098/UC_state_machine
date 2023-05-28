@@ -46,6 +46,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/wtr_race/
     ${CMAKE_CURRENT_SOURCE_DIR}/include/astar/
     ${CMAKE_CURRENT_SOURCE_DIR}/include/livox_lidar/
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/wtr_mavros_msgs/
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}    mr_planner_lib
     ${OpenCV_INCLUDE_DIRS}

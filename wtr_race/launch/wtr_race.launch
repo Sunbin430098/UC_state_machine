@@ -9,7 +9,9 @@
     <!-- 加载二维slam地图 -->
     <include file="$(find wtr_race)/launch/map/wtr_map_server.launch"/>
     <!-- 加载手柄 -->
-    <include file="$(find wtr_race)/launch/joy/wtr_joy.launch" />
+    <!-- <include file="$(find wtr_race)/launch/joy/wtr_joy.launch" /> --> -->
+
+    <node pkg="fake_mavros" type="serial2stm" name="fake_mavros" output="screen"/>
 
     <!-- <include file="$(find map_simulator)/launch/my_map.launch"/> -->
     
